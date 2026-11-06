@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.env
+.env.*
+!.env.example
+/data/
+/datasets/
+/checkpoints/
+/runs/
+/logs/
+/wandb/
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.ckpt
+.DS_Store
