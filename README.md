@@ -10,6 +10,8 @@ A learning portfolio on simulated Franka Panda manipulation. The goal is to repr
 | [Experiment protocol](docs/EXPERIMENT_PROTOCOL.md) | Data, evaluation and reporting rules |
 | [Decisions](docs/DECISIONS.md) | Rationale for the simulation/training split |
 
-Track work in [GitHub Issues](https://github.com/Hsiang-LinC/franka-imitation-learning/issues), [Milestones](https://github.com/Hsiang-LinC/franka-imitation-learning/milestones) and the [Project dashboard](https://github.com/Hsiang-LinC/franka-imitation-learning/projects).
+Track work in [GitHub Issues](https://github.com/Hsiang-LinC/franka-imitation-learning/issues), [Milestones](https://github.com/Hsiang-LinC/franka-imitation-learning/milestones) and the [Project dashboard](https://github.com/users/Hsiang-LinC/projects/3/views/1).
 
-Start with the Gymnasium reaching environment and planar arm exercises. Both run on CPU. The first hardware-dependent gate is the Isaac Sim compatibility check in M3.
+The owner’s Project includes the [Work Board](https://github.com/users/Hsiang-LinC/projects/3/views/1), [Milestones table](https://github.com/users/Hsiang-LinC/projects/3/views/2), and [Experiments view](https://github.com/users/Hsiang-LinC/projects/3/views/3). Public readers can follow the repository’s Issues and Milestones.
+
+Start with the [Gymnasium rollout exercise](https://github.com/Hsiang-LinC/franka-imitation-learning/issues/3), then work through the reaching environment and planar arm exercises. Both run on CPU. The first hardware-dependent gate is the Isaac Sim compatibility check in M3.

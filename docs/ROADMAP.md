@@ -2,7 +2,7 @@
 
 Build a reproducible Franka cube-stacking benchmark and compare BC-RNN with ACT. Hours are estimates of active work. Training wait time and infrastructure troubleshooting vary.
 
-Track live status, acceptance evidence and dependencies in [GitHub Issues](https://github.com/Hsiang-LinC/franka-imitation-learning/issues) and the [Project dashboard](https://github.com/Hsiang-LinC/franka-imitation-learning/projects).
+Track live status, acceptance evidence and dependencies in [GitHub Issues](https://github.com/Hsiang-LinC/franka-imitation-learning/issues) and the [Project dashboard](https://github.com/users/Hsiang-LinC/projects/3/views/1).
 
 | Milestone | Exit gate | Estimate |
 |---|---|---:|
