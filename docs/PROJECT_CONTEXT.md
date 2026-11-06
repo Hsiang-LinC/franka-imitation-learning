@@ -1,6 +1,6 @@
 # Project context
 
-The core deliverable is a reproducible simulation-only portfolio comparing Robomimic BC-RNN and LeRobot ACT on one Franka cube-stacking task. Use the official Isaac Lab Mimic tutorial as the baseline. Learn Gymnasium and planar FK/IK first. Optional policies remain separate from the release criteria.
+The core deliverable is a reproducible comparison of LeRobot ACT and Diffusion Policy trained offline from public MimicGen demonstrations and evaluated in the matching robosuite/MuJoCo Franka three-cube stacking task. Gymnasium and planar FK/IK are CPU learning exercises. BC-RNN is an optional reference and SmolVLA is a stretch goal.
 
 ## Resume a session
 
@@ -8,4 +8,4 @@ The core deliverable is a reproducible simulation-only portfolio comparing Robom
 2. Read its acceptance checklist, linked evidence and milestone. Check the latest code and applicable constraints in [Compute](COMPUTE.md) and [Experiment protocol](EXPERIMENT_PROTOCOL.md).
 3. Leave the issue with the commands, artifact links and verified outcomes needed by the next session. Close it when its acceptance criteria pass. Keep partial progress and failures in the issue.
 
-University scheduler, CUDA compatibility and simulator versions will be verified in M0 and M3. No training or simulation results are recorded at initialization.
+CLAIX login and compute nodes share a filesystem. M0 verifies the job environment and M3 verifies the simulator with a bounded action replay. Training and rollout results are pending.

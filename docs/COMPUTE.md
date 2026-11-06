@@ -1,14 +1,14 @@
 # Compute plan
 
+Clone once to a CLAIX filesystem shared by the login and compute nodes. Submit workloads from the login node through Slurm. Store datasets, checkpoints, videos and logs in approved shared storage outside Git. Record quota and retention rules before choosing locations.
+
 | Workload | Preferred compute | Preflight |
 |---|---|---|
-| Gymnasium, NumPy FK/IK, schema tests, data preprocessing and analysis | Local Mac or university CPU nodes | Record Python and package versions, job limits and storage policy |
-| PyTorch smoke tests and BC-RNN, ACT or optional policy training | University CPU for smoke tests, compatible university GPU nodes for full runs | Check the approved scheduler, GPU/backend, driver/CUDA/PyTorch compatibility, VRAM and checkpoint storage |
-| Isaac Sim startup, headless rollouts, demonstration replay/generation and camera rendering | Supported RTX Linux host, using institutional hardware if available | Match the selected Isaac Sim and Isaac Lab releases, then verify driver, GPU/VRAM, asset access and headless camera output |
-| Optional training fallback | Existing Colab allowance, up to the reported 50 CCUs/month when available | Verify current entitlement and runtime consumption. Save checkpoints to durable storage |
+| Gymnasium, NumPy FK/IK, HDF5 inspection and dataset conversion | Mac or CLAIX CPU | Verify Python, storage and job limits |
+| MuJoCo simulation, demonstration playback, policy rollout and MP4 recording | CLAIX CPU | Verify the matching robosuite/MimicGen environment and Linux OSMesa with one bounded episode |
+| ACT and Diffusion Policy offline training | CLAIX H100 | Check CUDA/PyTorch access, batch size, checkpoint writes and restart procedure |
+| Optional training fallback | Existing Colab allowance, up to the reported 50 CCUs/month when available | Verify entitlement and runtime consumption |
 
-RT cores are required by the supported Isaac Sim configuration. Headless execution still needs a supported host. A non-RTX GPU may be suitable for training while being unsupported for Isaac Sim. See the [Isaac Sim requirements](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/requirements.html) for the chosen version.
+Keep simulator and trainer dependencies in separate environments. Share the versioned dataset, manifest and checkpoint through CLAIX storage. Check hashes across transfers. The core route uses CPU software rendering with `MUJOCO_GL=osmesa`. If the CPU job cannot initialize OSMesa, record the failure and verify the required libraries are available through an approved environment before advancing.
 
-Transfer a versioned dataset manifest and data from simulation to training. Return the checkpoint, configuration and normalization metadata to the simulator for rollouts. Check SHA-256 on transfer and keep artifacts in approved storage.
-
-Use paid RTX cloud only for Isaac Sim or RTX rendering and only after explicit approval. Before provisioning or spending, record the exact workload, hardware, quoted price, maximum runtime and cost cap, storage charges, and shutdown/deletion plan in M3. Track actual GPU hours, CCUs or cost per run.
+The core roadmap uses no RTX resources. Any later paid cloud GPU provisioning or spend requires explicit approval with a cost cap and shutdown plan.
