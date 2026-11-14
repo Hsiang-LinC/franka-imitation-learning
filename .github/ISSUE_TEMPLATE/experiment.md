@@ -6,6 +6,10 @@ labels: "experiment"
 assignees: ""
 ---
 
+## Phase and baseline
+
+Name the phase, reference run and policy observation modality.
+
 ## Question and comparison
 
 ## Frozen inputs

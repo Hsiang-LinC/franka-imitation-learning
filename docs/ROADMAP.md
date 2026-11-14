@@ -1,19 +1,36 @@
 # Learning roadmap
 
-Train ACT and Diffusion Policy with the same public demonstrations and compare their closed-loop behavior on the matching Franka three-cube stacking task. Track status, acceptance evidence and prerequisites in [Issues](https://github.com/Hsiang-LinC/franka-imitation-learning/issues) and the [Project dashboard](https://github.com/users/Hsiang-LinC/projects/3/views/1).
+The approved sequence is baseline first, then comparison, then controlled improvements.
+Legacy M0–M9 numbers remain identifiers for existing issues, not mandatory lesson order.
+See [baseline flow](BASELINE.md), [session context](PROJECT_CONTEXT.md) and
+[GitHub Project](https://github.com/users/Hsiang-LinC/projects/3/views/1).
 
-| Milestone | Exit gate |
-|---|---|
-| M0 · Foundation | Tracking is usable and CLAIX storage, CPU and H100 jobs have been checked. |
-| M1 · Gymnasium | A seeded 2D reaching environment passes the environment checker and a reference rollout. |
-| M2 · Robot kinematics and IK | A tested planar arm reaches feasible targets and handles singular and unreachable targets. |
-| M3 · robosuite and MuJoCo | A CLAIX CPU job executes a recorded Franka action sequence from the saved initial state, verifies task success and produces an MP4. |
-| M4 · Public demonstrations | Inspect the MimicGen HDF5 and freeze a versioned episode split with synchronized observations and actions. |
-| M5 · BC-RNN reference (optional) | Run state or visuomotor BC-RNN as a reference if useful. |
-| M6 · Benchmark | Freeze the evaluator and development, ID and OOD test cases before comparing trained policies. The BC-RNN benchmark report is optional. |
-| M7 · ACT and Diffusion Policy | Convert one shared dataset, train both policies offline and evaluate both checkpoints through the same simulator interface. |
-| M8 · Controlled ablations | Compare success, failures and inference latency, then isolate training data budget and execution horizon in separate sweeps. |
-| M9 · Portfolio | Publish reproduction steps, benchmark results, and videos of successful and failed closed-loop rollouts. |
-| S2 · SmolVLA (optional) | Run a pilot on the shared benchmark with documented language and input conventions. |
+| Phase | Work and legacy issue numbers | Exit gate |
+|---|---|---|
+| 1 · End-to-end BC-RNN baseline | M0 compute #2; M3 environment/replay #8–9; M4 data #10–11; M5 BC-RNN #12 (state), #13 (vision when ready); baseline report #15 | Own trained checkpoint reloads into matching simulator; closed-loop evaluation produces success counts and success/failure videos with reproducible settings |
+| 2 · ACT and Diffusion Policy comparison | M6 frozen benchmark #14; M7 shared data conversion #16, ACT #17, Diffusion #21 | Both checkpoints evaluated with matched inputs/data/actions and identical held-out reset lists; metrics and limitations reported |
+| 3 · Controlled improvement and portfolio | M8 ablations #18 and analysis #19; M9 portfolio #20 | Separate data-budget and execution-horizon sweeps, uncertainty and failure analysis; reproduction instructions, report and videos |
 
-Start M1–M2 on CPU while qualifying CLAIX and preparing M3. For M3, use [MimicGen `stack_three_d0.hdf5`](https://huggingface.co/datasets/amandlek/mimicgen_datasets/tree/main/core) and the [upstream compatibility instructions](https://github.com/NVlabs/mimicgen/blob/main/docs/introduction/installation.md). The [first replay issue](https://github.com/Hsiang-LinC/franka-imitation-learning/issues/9) contains the bounded smoke command. M7 trains on CLAIX H100s and M6–M9 use the CPU simulator for evaluation. See [Compute](COMPUTE.md) and the [Experiment protocol](EXPERIMENT_PROTOCOL.md).
+M1 Gymnasium #3–4 and M2 FK/IK #5–7 are optional supporting lessons. S2 SmolVLA #22
+remains a stretch goal after the core project. Initial state-only BC-RNN is an integration
+baseline; a direct cross-method comparison requires matched observations and evaluation.
+#15 is the phase-1 baseline report in M5. It precedes #14; any later matched BC-RNN
+comparison must be rerun on the frozen phase-2 evaluator.
+
+## Phase 1 order
+
+1. Understand the upstream entry points and persistent artifacts.
+2. Qualify CPU/H100 jobs and shared storage; pin simulator/trainer environments.
+3. Download only the selected `stack_three_d0.hdf5`, record provenance/checksum,
+   inspect metadata and execute one saved action sequence from its initial state.
+4. Inspect observations/actions and freeze episode splits before fitting a model.
+5. Run a bounded training smoke check; verify checkpoint saving and reloading.
+6. Train BC-RNN and evaluate saved checkpoints separately in the simulator.
+7. Record baseline successes/trials, failures, videos and reproduction settings.
+
+Use development rollouts for iteration. Freeze phase-2 held-out ID/OOD cases before
+headline comparisons. A short training run proves integration, not task competence.
+Issue labels, native dependencies and milestone descriptions are synchronized with this
+sequence. Project custom fields/manual ordering remain pending due to missing Project
+access. Check live status before executing any issue. No runtime milestone is completed
+by this documentation change.

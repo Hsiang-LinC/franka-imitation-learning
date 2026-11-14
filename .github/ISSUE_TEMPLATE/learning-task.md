@@ -6,6 +6,11 @@ labels: ""
 assignees: ""
 ---
 
+## Phase and upstream entry point
+
+Phase 1 baseline / Phase 2 method comparison / Phase 3 improvements, or optional lesson.
+Link the pinned upstream tool to reuse; explain any local code required.
+
 ## Objective
 
 ## Tasks
