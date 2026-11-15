@@ -1,38 +1,29 @@
 # Baseline: pins, entry points and handoffs
 
-## Candidate pins (not yet installed or validated)
+## Stack (route B, D1)
 
-Chosen to match MimicGen's tested stack, so Lift and stack_three share one sim env.
+Use the newest versions that pass action replay on the robomimic v1.5 datasets. Exact
+commits are recorded here once validated.
 
-| Component | Pin | Source of the choice |
+| Component | Candidate | Constraint |
 |---|---|---|
-| Python | 3.11.5 (CLAIX module `Python/3.11.5`) | MuJoCo 2.3.2 ships cp311 wheels |
-| robosuite | `b9d8d3de5e3dfd1724f4a0e6555246c460407daa` | MimicGen installation docs (tested commit); v1.5+ unsupported |
-| MuJoCo | `mujoco==2.3.2` | MimicGen docs: other versions change rendering/dynamics |
-| robomimic | `d0b37cf214bd24fb590d182edb6384333f67b661` (v0.3.0 + 26 commits) | MimicGen installation docs |
-| MimicGen | pending (needed from stack_three onward) | — |
-| Lift data | robomimic `lift/ph/low_dim_v141.hdf5`, `demo_v141.hdf5` (Stanford host, reachable 2026-11-15) | robomimic v0.3.0 dataset registry |
-| stack_three data | MimicGen `core/stack_three_d0.hdf5` (Hugging Face) | MimicGen datasets |
+| Python | CLAIX `Python/3.11.5` (with `GCCcore/13.3.0`) | Must have wheels for MuJoCo/torch |
+| robosuite | v1.5.2 (latest release, 2025-12) | Requires `mujoco>=3.3.0` |
+| MuJoCo | newest 3.x accepted by robosuite | 4.x untested by robosuite; validate by replay |
+| robomimic | v0.5.0 or newer master | Provides BC-RNN and `DiffusionPolicyUNet` |
+| Datasets | robomimic v1.5 `lift`, `can`, `square` (ph, mh) | Generated for robosuite v1.5 |
+| Rendering | `Mesa/24.1.3` module (OSMesa) or EGL | No system libOSMesa on CLAIX |
 
-Newer robomimic releases (v0.4+) point to robosuite-v1.5 datasets; do not mix them with
-these pins. Diffusion Policy version conflict: see [decisions](DECISIONS.md).
+## Entry points (robomimic; verify flags at the pinned revision)
 
-## Entry points
-
-Paths are relative to each external checkout; verify flags against the pinned revision.
-
-| Step | Upstream tool |
+| Step | Tool |
 |---|---|
-| Replay actions to MP4 | robomimic `robomimic/scripts/playback_dataset.py` |
-| Inspect dataset | robomimic `robomimic/scripts/get_dataset_info.py` |
-| Build observations if absent | robomimic `robomimic/scripts/dataset_states_to_obs.py` |
-| BC-RNN config (stack_three) | MimicGen `mimicgen/scripts/generate_core_training_configs.py` |
-| Train | robomimic `robomimic/scripts/train.py` (integrated rollouts off) |
-| Evaluate checkpoint | robomimic `robomimic/scripts/run_trained_agent.py` |
-
-Reading: MimicGen
-[reproducing experiments](https://github.com/NVlabs/mimicgen/blob/main/docs/tutorials/reproducing_experiments.md),
-robomimic `examples/train_bc_rnn.py`.
+| Download datasets | `robomimic/scripts/download_datasets.py` |
+| Inspect dataset | `robomimic/scripts/get_dataset_info.py` |
+| Replay actions to MP4 | `robomimic/scripts/playback_dataset.py` |
+| Build observations if absent | `robomimic/scripts/dataset_states_to_obs.py` |
+| Train BC-RNN / Diffusion Policy | `robomimic/scripts/train.py` with configs from `robomimic/exps/templates/` |
+| Evaluate checkpoint | `robomimic/scripts/run_trained_agent.py` |
 
 ## Handoff
 

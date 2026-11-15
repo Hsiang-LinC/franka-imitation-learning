@@ -5,7 +5,7 @@ Clone once to a CLAIX filesystem shared by the login and compute nodes. Submit w
 | Workload | Preferred compute | Preflight |
 |---|---|---|
 | Gymnasium, NumPy FK/IK, HDF5 inspection and dataset conversion | Mac or CLAIX CPU | Verify Python, storage and job limits |
-| MuJoCo simulation, demonstration playback, policy rollout and MP4 recording | CLAIX CPU | Verify the matching robosuite/MimicGen environment and Linux OSMesa with one bounded episode |
+| MuJoCo simulation, demonstration playback, policy rollout and MP4 recording | CLAIX CPU | Verify the pinned robosuite environment and OSMesa/EGL rendering with one bounded episode |
 | BC-RNN, ACT and Diffusion Policy offline training | CLAIX H100 | Check CUDA/PyTorch access, batch size, checkpoint writes and restart procedure |
 | Optional training fallback | Existing Colab allowance, up to the reported 50 CCUs/month when available | Verify entitlement and runtime consumption |
 

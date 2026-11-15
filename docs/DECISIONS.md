@@ -3,17 +3,23 @@
 Current decisions only. Superseded options (an earlier Isaac Lab/Isaac Sim route,
 exercise-first ordering, optional BC-RNN) are kept in Git history.
 
-## D1 · Simulator, task and compute split
+## D1 · Simulator, task and compute split (revised 2026-11-15)
 
-robosuite + MuJoCo with the public MimicGen `stack_three_d0` dataset as the fixed main
-task. It renders on CLAIX CPU nodes (`MUJOCO_GL=osmesa`) without an RTX host. Simulation
-(replay, rollout, video) runs in CPU jobs; offline training runs in H100 jobs, in a
-separate Python environment. Checkpoints and datasets are exchanged through shared
-storage with checksums.
+Current stack: robosuite v1.5.x + MuJoCo 3.x + robomimic v0.5+, with robomimic's
+v1.5 Franka datasets. Task ladder: Lift (warm-up) → Can → **Square** (main task);
+Transport/ToolHang are optional stretch tasks. Reasons: BC-RNN and Diffusion Policy
+share one maintained framework, and Square has published Diffusion Policy results to
+sanity-check against. This replaces MimicGen `stack_three_d0`, whose robosuite ≤1.4.1
+pin blocked modern MuJoCo and robomimic's Diffusion Policy.
+
+MuJoCo needs no RTX GPU (unlike Isaac Sim): physics runs on CPU and rendering uses
+OpenGL via OSMesa (CPU) or EGL. Simulation runs in CLAIX CPU jobs; offline training
+runs in H100 jobs in a separate Python environment. Datasets and checkpoints move
+through shared storage with checksums.
 
 ## D2 · Baseline first, upstream code reused
 
-Phase 1 reproduces BC-RNN end to end with upstream MimicGen/robomimic entry points;
+Phase 1 reproduces BC-RNN end to end with upstream robomimic entry points;
 phase 2 compares ACT and Diffusion Policy; phase 3 runs controlled sweeps and packages
 the portfolio. We own configs, Slurm jobs, notebooks and evidence, not copies of
 upstream trainers. Gymnasium and FK/IK are optional lessons.
@@ -24,12 +30,12 @@ Phase 1 uses development rollouts. Before ACT/Diffusion headline numbers, freeze
 evaluator, reset lists (ID/OOD) and success predicate. Any protocol change gets a new
 version and the affected methods are rerun.
 
-## D4 · Lift warm-up before stack_three (2026-11-15)
+## D4 · Lift warm-up before the main task (2026-11-15)
 
 Run the full replay → train → reload → rollout → video loop on robomimic Lift
 (proficient-human, low-dim) first. Lift is short and reliably learnable, so failures
 isolate environment/rendering/Slurm problems rather than task difficulty. Use the same
-pins as the stack_three stack so the environment carries over unchanged. Lift results
+pins as the main task so the environment carries over unchanged. Lift results
 are a pipeline check, not portfolio results.
 
 ## D5 · Two learning tracks (2026-11-15)
@@ -41,10 +47,8 @@ are a pipeline check, not portfolio results.
   against Track A. They exist to explain mechanisms; they never replace upstream
   results in headline tables unless evaluated under the frozen protocol.
 
-## Open question · Diffusion Policy implementation (phase 2)
+## Open question · ACT implementation (phase 2)
 
-`DiffusionPolicyUNet` exists only in robomimic v0.5.0, whose released datasets target
-robosuite v1.5. MimicGen does not support robosuite v1.5+. Options to evaluate before
-phase 2: robomimic v0.5 in the offline trainer env with rollout in the 1.4.1 sim env
-(checkpoint loading compatibility unverified), or a separate DP implementation with a
-data conversion. ACT is not in robomimic at any version.
+robomimic v0.5 provides BC-RNN and `DiffusionPolicyUNet`; no robomimic version has ACT.
+Options before phase 2: LeRobot ACT with a dataset conversion, or a Track B
+implementation evaluated under the frozen protocol.

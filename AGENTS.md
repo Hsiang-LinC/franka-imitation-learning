@@ -2,8 +2,8 @@
 
 ## Goal and teaching workflow
 
-Build an end-to-end imitation-learning project on fixed simulated Franka three-cube
-stacking. Study how policy methods, demonstration budgets and action execution settings
+Build an end-to-end imitation-learning project on fixed simulated Franka manipulation
+(robomimic Lift → Can → Square; docs/DECISIONS.md D1). Study how policy methods, demonstration budgets and action execution settings
 affect closed-loop task performance. The robot stays fixed; the learned policy and
 its execution settings are the experimental variables.
 
@@ -34,8 +34,7 @@ close an issue merely because a plan or scaffold exists.
 
 ## Repository and upstream boundaries
 
-Use upstream MimicGen configuration generation and robomimic training/rollout code for
-the baseline. Pin external repositories by commit; keep their checkouts outside this
+Use upstream robomimic config generation, training and rollout code for the baseline. Pin external repositories by commit; keep their checkouts outside this
 repository. Do not copy upstream implementations or introduce local train/evaluate
 wrappers without a demonstrated need. Verify entry points against the chosen revision.
 Keep docs short and current: replace superseded content (Git keeps history) instead of
@@ -61,7 +60,8 @@ the simulator/trainer venv; the foundations venv is not the robot environment.
 
 Keep simulator and offline training environments separate, including BC-RNN; disable
 in-training simulator rollouts when using a simulator-free trainer and evaluate saved
-checkpoints separately. Pin robosuite, MuJoCo, MimicGen and robomimic against the dataset.
+checkpoints separately. Pin robosuite, MuJoCo and robomimic against the dataset; prefer the newest versions
+that pass action replay.
 Verify action playback before training. Use CLAIX CPU jobs for simulation and H100 jobs
 for training. GPU interactive display is an optional, separately verified workflow.
 Obtain explicit approval before paid cloud GPU provisioning or spend.

@@ -18,9 +18,9 @@ Optional: M1 Gymnasium #3–4, M2 FK/IK #5–7. Stretch after phase 3: S2 SmolVL
 
 0. **Lift warm-up** (D4): pin the sim env, replay one Lift demo to MP4 on a CPU job,
    train BC-RNN low-dim briefly on H100, reload the checkpoint, roll out with video.
-1. Download only `stack_three_d0.hdf5`; record source and checksum; replay one demo.
+1. Download Can, then Square (ph) datasets; record source and checksum; replay one demo.
 2. Inspect observations/actions; freeze episode splits.
-3. Generate the BC-RNN config with MimicGen's generator; training smoke run; reload check.
+3. Build the BC-RNN config from robomimic's templates; training smoke run; reload check.
 4. Full BC-RNN training; evaluate saved checkpoints separately in the simulator.
 5. Record successes/trials, failure examples, videos and settings (#15).
 
