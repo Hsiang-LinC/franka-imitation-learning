@@ -8,8 +8,13 @@ affect closed-loop task performance. The robot stays fixed; the learned policy a
 its execution settings are the experimental variables.
 
 Follow three phases: (1) upstream BC-RNN baseline, (2) matched ACT and Diffusion Policy
-comparison, (3) controlled improvements and portfolio. BC-RNN is required for phase 1.
+comparison, (3) controlled improvements and portfolio. BC-RNN is required for phase 1;
+start phase 1 with a robomimic Lift warm-up on the same pins (docs/DECISIONS.md D4).
 Gymnasium and FK/IK exercises are optional supporting lessons, not entry gates.
+
+Two tracks (D5): Track A uses upstream code for all reported results. Track B is the
+learner's small from-scratch implementations (e.g. diffusion, action chunking) for
+understanding; these are intended learning code, not forbidden upstream copies.
 
 The user is the learner and main implementer. Explain purpose, inputs, outputs and
 success checks before each hands-on step. Discuss workflow and scope before creating
@@ -33,6 +38,8 @@ Use upstream MimicGen configuration generation and robomimic training/rollout co
 the baseline. Pin external repositories by commit; keep their checkouts outside this
 repository. Do not copy upstream implementations or introduce local train/evaluate
 wrappers without a demonstrated need. Verify entry points against the chosen revision.
+Keep docs short and current: replace superseded content (Git keeps history) instead of
+appending logs; record run evidence in the relevant issue.
 
 Notebooks are learning narratives, small inspections and result analysis. One notebook
 has one purpose and explicit prerequisites/outputs. Do not run long training implicitly
@@ -45,6 +52,12 @@ for tested dependencies. Add reusable src/ modules only when integration require
 See notebooks/README.md and docs/BASELINE.md for the planned structure and handoffs.
 
 ## Compute, compatibility and evidence
+
+CLAIX must not use Anaconda/Conda. Prefer standard Python venv and python -m pip.
+Clone upstream sources and checkout pinned commits before editable pip installation
+when source installation is required. Do not install Conda or uv as prerequisites.
+Select a supported Python version from the available HPC environment before creating
+the simulator/trainer venv; the foundations venv is not the robot environment.
 
 Keep simulator and offline training environments separate, including BC-RNN; disable
 in-training simulator rollouts when using a simulator-free trainer and evaluate saved

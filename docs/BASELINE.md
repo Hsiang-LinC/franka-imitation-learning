@@ -1,65 +1,52 @@
-# Baseline: upstream code and execution flow
+# Baseline: pins, entry points and handoffs
 
-## Scope
+## Candidate pins (not yet installed or validated)
 
-Fixed task: Franka three-cube stacking, public MimicGen `stack_three_d0.hdf5`.
-First method: robomimic BC-RNN. Use published demonstrations; generating new MimicGen
-data is not required for phase 1. The upstream pipeline exists, but has not been
-validated in this project. All robot installation/training/rollout checks are pending.
+Chosen to match MimicGen's tested stack, so Lift and stack_three share one sim env.
 
-## Sources and entry points
-
-Paths below are relative to each external checkout. Links describe upstream branches;
-commands and configuration fields must be checked against pinned revisions before use.
-
-| Work | Existing code/resource | Project adaptation |
+| Component | Pin | Source of the choice |
 |---|---|---|
-| Install compatible stack | [MimicGen installation](https://github.com/NVlabs/mimicgen/blob/main/docs/introduction/installation.md) | Pin full dependency set and verify CLAIX CPU rendering/H100 training |
-| Download data | [MimicGen core datasets](https://huggingface.co/datasets/amandlek/mimicgen_datasets/tree/main/core) | Only selected file; record source revision, license and checksum |
-| Replay actions | robomimic [playback_dataset.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/playback_dataset.py) | Saved initial state, action replay, separate task-success check, MP4 |
-| Build observations if absent | robomimic [dataset_states_to_obs.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/dataset_states_to_obs.py) | Inspect stored keys first; regenerate only what is needed |
-| Generate BC-RNN config | MimicGen [generate_core_training_configs.py](https://github.com/NVlabs/mimicgen/blob/main/mimicgen/scripts/generate_core_training_configs.py) | Select stack_three D0, map downloaded path, set output paths and chosen modality |
-| Train | robomimic [train.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/train.py) | Config and Slurm job; disable integrated rollout for offline-only training |
-| Deploy/evaluate | robomimic [run_trained_agent.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/run_trained_agent.py) | Explicit checkpoint, reset/seed protocol, rollout horizon, metrics and video |
+| Python | 3.11.5 (CLAIX module `Python/3.11.5`) | MuJoCo 2.3.2 ships cp311 wheels |
+| robosuite | `b9d8d3de5e3dfd1724f4a0e6555246c460407daa` | MimicGen installation docs (tested commit); v1.5+ unsupported |
+| MuJoCo | `mujoco==2.3.2` | MimicGen docs: other versions change rendering/dynamics |
+| robomimic | `d0b37cf214bd24fb590d182edb6384333f67b661` (v0.3.0 + 26 commits) | MimicGen installation docs |
+| MimicGen | pending (needed from stack_three onward) | — |
+| Lift data | robomimic `lift/ph/low_dim_v141.hdf5`, `demo_v141.hdf5` (Stanford host, reachable 2026-11-15) | robomimic v0.3.0 dataset registry |
+| stack_three data | MimicGen `core/stack_three_d0.hdf5` (Hugging Face) | MimicGen datasets |
 
-The [official reproduction tutorial](https://github.com/NVlabs/mimicgen/blob/main/docs/tutorials/reproducing_experiments.md)
-connects downloaded data to BC-RNN learning. The generic
-[train_bc_rnn.py example](https://github.com/ARISE-Initiative/robomimic/blob/master/examples/train_bc_rnn.py)
-is supplementary reading, not a second independent implementation to maintain.
+Newer robomimic releases (v0.4+) point to robosuite-v1.5 datasets; do not mix them with
+these pins. Diffusion Policy version conflict: see [decisions](DECISIONS.md).
 
-## Persistent handoff
+## Entry points
+
+Paths are relative to each external checkout; verify flags against the pinned revision.
+
+| Step | Upstream tool |
+|---|---|
+| Replay actions to MP4 | robomimic `robomimic/scripts/playback_dataset.py` |
+| Inspect dataset | robomimic `robomimic/scripts/get_dataset_info.py` |
+| Build observations if absent | robomimic `robomimic/scripts/dataset_states_to_obs.py` |
+| BC-RNN config (stack_three) | MimicGen `mimicgen/scripts/generate_core_training_configs.py` |
+| Train | robomimic `robomimic/scripts/train.py` (integrated rollouts off) |
+| Evaluate checkpoint | robomimic `robomimic/scripts/run_trained_agent.py` |
+
+Reading: MimicGen
+[reproducing experiments](https://github.com/NVlabs/mimicgen/blob/main/docs/tutorials/reproducing_experiments.md),
+robomimic `examples/train_bc_rnn.py`.
+
+## Handoff
 
 ```text
-source dataset + simulator pins
-  -> validated action replay + data inspection
-  -> observation dataset + versioned episode split
-  -> BC-RNN config + offline H100 training
-  -> run ID + checkpoint + checksum
-  -> CPU closed-loop rollout
-  -> per-episode metrics + videos -> notebook analysis
+dataset + sim pins -> replay MP4 + inspection -> split -> config
+  -> H100 training -> run ID + checkpoint + checksum
+  -> CPU rollout -> per-episode metrics + videos -> analysis notebook
 ```
 
-Each step reads saved inputs; no step depends on another notebook's live variables.
-Keep full data, manifests with private paths, logs, checkpoints and videos in approved
-shared storage outside Git. Commit sanitized settings, source revisions and summaries.
-Never put absolute university paths or secrets into a public notebook/config.
+Each step reads persisted inputs. Data, checkpoints, logs and videos live in shared
+storage outside Git; commit sanitized configs and summaries without absolute private paths.
 
-## Ownership and environment boundaries
+## Acceptance
 
-- External upstream checkouts retain their original code and pinned revision.
-- `configs/` owns our resolved experimental choices; `jobs/` invokes upstream entry points.
-- `notebooks/` explains and inspects the workflow; it does not duplicate training loops.
-- Offline training must not import/initialize a simulator accidentally. Check the pinned
-  trainer with rollout disabled; any remaining simulator-only import is a preflight blocker.
-- Record Python, PyTorch/CUDA and package versions independently per environment.
-- Introduce local reusable modules only when conversion or policy integration requires them.
-
-## Baseline acceptance
-
-A saved-state video or decreasing training loss alone is insufficient. Require own
-trained weights, successful checkpoint reload, closed-loop trials with successes/trials,
-representative failures, command/config records and artifact checksums. Do not promise
-a success-rate threshold before measuring the first complete run.
-
-A state-based first run may use privileged object state. Label it explicitly; later
-RGB + proprioception comparisons must not attribute input advantages to policy methods.
+Own trained weights, successful reload, closed-loop successes/trials, representative
+failures, recorded commands/configs/checksums. Loss curves or replay videos alone are
+insufficient. A low-dim run uses privileged object state; label it as such.

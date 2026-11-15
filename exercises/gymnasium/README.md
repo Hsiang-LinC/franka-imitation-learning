@@ -3,7 +3,7 @@
 Issue: https://github.com/Hsiang-LinC/franka-imitation-learning/issues/3
 
 This exercise runs CartPole with random actions. It does not train a policy.
-The shared reset/step/episode-end loop will later support ACT and Diffusion Policy evaluation.
+It practises the reset/step/episode-end loop that every policy rollout uses.
 
 ## Environment
 

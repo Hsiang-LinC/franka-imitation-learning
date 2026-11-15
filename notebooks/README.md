@@ -1,23 +1,19 @@
-# Learning notebooks
+# Notebooks
 
-One notebook per clear purpose, with several notebooks in each phase. These chapters
-are planned; no robot notebook has been implemented or executed yet.
+Notebooks explain, inspect and analyze. Long training and rollouts run as Slurm jobs
+(`jobs/`); Run All must never launch them. Each notebook states purpose, kernel/venv,
+inputs, outputs and success checks, and reopens from persisted files without running
+earlier notebooks. Keep outputs small and free of private paths.
 
-| Planned notebook | Inputs | Persisted outputs |
+| Planned notebook | Track | Inputs → outputs |
 |---|---|---|
-| 01_environment_and_replay.ipynb | Pinned upstream stack, source dataset | Environment check, replay evidence/video, dataset provenance |
-| 02_bc_rnn_training.ipynb | Inspected observation data, frozen split | Resolved training config, Slurm job/run ID, checkpoint reference |
-| 03_baseline_evaluation.ipynb | Checkpoint and development evaluation settings | Per-episode metrics, videos, baseline analysis |
-| Later: shared benchmark | Validated baseline/data interfaces | Frozen ID/OOD manifests, conversion validation |
-| Later: ACT/Diffusion comparison | Shared dataset/config/evaluator | Matched method results |
-| Later: controlled experiments/report | Fixed comparison and sweep settings | Ablation results, figures, report |
+| 00_lift_warmup | A | Lift dataset, replay MP4, checkpoint → inspection notes, rollout results |
+| 01_stack_three_data | A | `stack_three_d0.hdf5` → obs/action inspection, frozen split |
+| 02_bc_rnn_baseline | A | Run ID, checkpoint, rollout metrics → baseline analysis and videos |
+| Minimal diffusion policy | B | Low-dim Lift data → own DP, compared with upstream |
+| Minimal action chunking (ACT-style) | B | Same data → own chunking policy, compared with upstream |
+| Later: method comparison, sweeps, report | A | Frozen evaluator results → figures and write-up |
 
-Every notebook starts with purpose, prerequisites, explicit kernel/environment, inputs,
-outputs and success checks. Short cells inspect data and results. Long tasks use explicit
-Slurm submissions; Run All must never silently launch full training. Reopening a chapter
-must work from persisted inputs without running earlier notebooks.
-
-There is no one-to-one notebook/script pairing. Several chapters can use the same upstream
-script. Use explicit interpreter paths for simulator versus training jobs; never switch
-Python environments by installing incompatible stacks into one live kernel. Keep outputs
-small and sanitized; reference large artifacts outside Git.
+Track B code can graduate into `src/` once a notebook outgrows it or a job needs it.
+Use the kernel matching the work: sim env for replay/rollout inspection, trainer env
+for model code. Never install a second stack into a running kernel.
