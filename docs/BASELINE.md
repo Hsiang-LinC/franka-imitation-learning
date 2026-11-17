@@ -11,7 +11,7 @@ Validated 2026-11-16: full open-loop action replay of Lift ph succeeds on these 
 | robosuite | v1.5.2 tag, `824ac14cefcfb7ec125fe5eb2e0bad7364466154` | Latest release; v1.5 datasets target it |
 | MuJoCo | `mujoco==3.9.0` | robosuite caps `<3.10` on master: 3.10 changed `mj_fullM` and breaks its controllers. The v1.5.2 release lacks the cap, so pin explicitly. Fallback: 3.3.x if replay drifts |
 | robomimic | master `d309eaecc18acf4152a830a895a6984b8ac71b05` (2026-08-09) | v0.5.0 + 15 fixes, incl. the current dataset HF repo; has `DiffusionPolicyUNet` |
-| PyTorch | sim env `torch==2.15.0+cpu`; trainer env: same version, CUDA build (pending) | Checkpoints must load across envs |
+| PyTorch | sim env `torch==2.15.0+cpu`; trainer env `torch==2.15.0` (PyPI CUDA 13.2 build, H100 driver unverified) | Checkpoints must load across envs |
 | Lift data | HF `robomimic/robomimic_datasets` `v1.5/lift/ph/demo_v15.hdf5` (sha256 `68f2a8cf…f37`), `low_dim_v15.hdf5` (`2067777c…aeb540`) | Hugging Face LFS hashes, to verify after download |
 | Rendering | `Mesa/24.1.3` module, `MUJOCO_GL=osmesa` (verified in a CPU job) | No system libOSMesa on CLAIX |
 
@@ -25,6 +25,35 @@ Validated 2026-11-16: full open-loop action replay of Lift ph succeeds on these 
   ≈ 13 on the worst demo); judge replay by task success, not exact state equality.
 - Upstream `playback_dataset.py` MP4 of the `20_percent_valid` mask (4 demos): all lifts
   visually confirmed. Use `--filter_key`, not `--n` (unseeded shuffle), and `--video_skip 1`.
+
+### Trainer env and CPU training cost (Lift ph, BC-RNN low-dim)
+
+Trainer venv (`requirements/train.txt`): robomimic editable, installed with `sim.txt` as
+pip constraints; no robosuite/MuJoCo. robomimic imports `six` without declaring it.
+
+`jobs/lift_bc_rnn_cpu.sh` (CPU `devel`, 200 epochs, in-training rollouts off), config =
+`configs/lift/bc_rnn_low_dim.json` + overrides recorded in the job script:
+
+| Job | Cores | Elapsed | Train epoch (median) | Valid epoch | MaxRSS |
+|---|---|---|---|---|---|
+| 5824723 | 4 | 20:16 | 5.66 s | 0.15 s | 1.0 GB |
+| 5824724 | 8 | 19:16 | 5.40 s | 0.14 s | 1.0 GB |
+
+- Both jobs used ≈1.9 cores on average (TotalCPU / elapsed); 8 cores gave no speed-up.
+  Use `-c 4`; `-c 2` is untested.
+- Full paper run (2000 epochs × 100 steps) ≈ 3.2 h ≈ 13 core-h at 4 cores: fits one
+  regular CPU job, or ≈4 `devel` chunks with `--resume` (resume untested).
+- Logged losses are identical epoch by epoch in both jobs (training seed 1, CPU).
+- Train loss (GMM NLL) 1.35 → −18.9; validation loss ≈ 2×10⁶ throughout. Validation loss
+  is not a checkpoint-selection criterion; select by rollouts (0.4).
+
+### Rollout seeding (robosuite 1.5)
+
+`run_trained_agent.py --seed` seeds only `np.random` and `torch` (policy GMM sampling).
+robosuite 1.5 draws object placement from the env's own `default_rng(env_kwargs["seed"])`,
+which is `None` in the dataset metadata, so initial states are unseeded. Verified
+2026-11-17: same `np.random.seed` → different cube positions; `env_kwargs["seed"]=0` →
+identical. Paired checkpoint evaluation therefore needs the env seed set (0.4).
 
 ### Known install issue: egl_probe (robomimic dependency)
 
@@ -49,7 +78,7 @@ before installing robomimic. On nodes without a GPU, `get_available_devices()` r
 
 ```text
 dataset + sim pins -> replay MP4 + inspection -> split -> config
-  -> H100 training -> run ID + checkpoint + checksum
+  -> CPU (low-dim) / H100 (image) training -> run ID + checkpoint + checksum
   -> CPU rollout -> per-episode metrics + videos -> analysis notebook
 ```
 

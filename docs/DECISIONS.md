@@ -3,7 +3,7 @@
 Current decisions only. Superseded options (an earlier Isaac Lab/Isaac Sim route,
 exercise-first ordering, optional BC-RNN) are kept in Git history.
 
-## D1 · Simulator, task and compute split (revised 2026-11-15)
+## D1 · Simulator, task and compute split (revised 2026-11-17)
 
 Current stack: robosuite v1.5.x + MuJoCo 3.x + robomimic v0.5+, with robomimic's
 v1.5 Franka datasets. Task ladder: Lift (warm-up) → Can → **Square** (main task);
@@ -13,9 +13,13 @@ sanity-check against. This replaces MimicGen `stack_three_d0`, whose robosuite �
 pin blocked modern MuJoCo and robomimic's Diffusion Policy.
 
 MuJoCo needs no RTX GPU (unlike Isaac Sim): physics runs on CPU and rendering uses
-OpenGL via OSMesa (CPU) or EGL. Simulation runs in CLAIX CPU jobs; offline training
-runs in H100 jobs in a separate Python environment. Datasets and checkpoints move
-through shared storage with checksums.
+OpenGL via OSMesa (CPU) or EGL. Simulation runs in CLAIX CPU jobs. Offline training
+runs in a separate, simulator-free Python environment: **low-dim training on CPU**,
+H100 jobs reserved for image-based training (RGB encoders) and phase-2 methods where
+CPU is measured too slow. Reason: BC-RNN low-dim Lift trains at ≈5.5 s/epoch on CPU and
+does not speed up beyond ~2 cores (docs/BASELINE.md), so a full 2000-epoch run costs
+≈13 core-h, while the student GPU quota is 3 GPU-h/month and GPU queues are long.
+Datasets and checkpoints move through shared storage with checksums.
 
 ## D2 · Baseline first, upstream code reused
 

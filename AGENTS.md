@@ -62,8 +62,8 @@ Keep simulator and offline training environments separate, including BC-RNN; dis
 in-training simulator rollouts when using a simulator-free trainer and evaluate saved
 checkpoints separately. Pin robosuite, MuJoCo and robomimic against the dataset; prefer the newest versions
 that pass action replay.
-Verify action playback before training. Use CLAIX CPU jobs for simulation and H100 jobs
-for training. GPU interactive display is an optional, separately verified workflow.
+Verify action playback before training. Use CLAIX CPU jobs for simulation and low-dim
+training, H100 jobs for image-based training (docs/DECISIONS.md D1). GPU interactive display is an optional, separately verified workflow.
 Obtain explicit approval before paid cloud GPU provisioning or spend.
 
 Record commands, commits, versions, seeds, artifact checksums and actual outcomes.
