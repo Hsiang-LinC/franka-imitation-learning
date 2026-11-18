@@ -80,8 +80,24 @@ jobs). Interval = 95% Wilson; steps = median over successful episodes.
 - **Report, fresh seed 1** (job 5856229, no initial state shared with seed 0): epoch 200
   **49/50 (98%, 95% Wilson 90–100%)**, median 42 steps. The robomimic paper reports
   100% for BC-RNN low-dim Lift ph (best checkpoint of 2000 epochs, mean of 3 training seeds).
-- Videos (first 3 episodes per checkpoint) are in the eval run folders; failure review
-  pending.
+- Videos: first 3 episodes per checkpoint in the eval run folders; the late failures were
+  re-run with `--video_list` (jobs 5863826: epoch 180 seed 0 ep 5; 5863827: epoch 200
+  seed 1 ep 35). Both re-runs reproduced all 50 episode records of the original jobs.
+
+Failure modes (agentview only, so height is ambiguous; 2 late failures, so no causal claims):
+
+- **Missed grasp, no recovery.** One finger lands on the cube edge and tilts it; the
+  gripper lifts empty. Later the policy returns to a pre-grasp pose (epoch 180 descends again)
+  but never closes and hovers until step 400. Seen in epochs 100, 140 and 180.
+- **Divergence.** Epoch 200 seed 1 ep 35: fingers misaligned with the cube yaw, the palm
+  presses on the cube, then the arm drifts and twists into a posture absent from the
+  demos. Epochs 20/40 drift out of view the same way.
+- **Early checkpoints** (≤ 80) approach and hover without a grasp.
+- Every failure runs to the horizon: BC reproduces the proficient (ph) demos, which contain
+  no failed grasps and so no recovery behaviour; once off-distribution the errors compound.
+- Cube yaw (90°-symmetric, effective 0–45°) is a candidate factor, not a sufficient one:
+  failed episodes have 41.3° (seed 0 ep 5, rank 7 of 50) and 33.5° (seed 1 ep 35, rank 15);
+  the most-rotated seed 1 episode (44.5°) succeeds.
 
 ### Known install issue: egl_probe (robomimic dependency)
 

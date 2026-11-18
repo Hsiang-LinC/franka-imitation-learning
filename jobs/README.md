@@ -4,7 +4,7 @@ Add Slurm scripts after validating the pinned upstream commands and resource set
 Validated: `lift_replay.sh` (Lift replay check + MP4, CPU job 5813465);
 `lift_bc_rnn_cpu.sh` (BC-RNN low-dim Lift on CPU, jobs 5824723/5824724).
 `lift_eval_cpu.sh` + `eval_checkpoints.py` (paired closed-loop checkpoint evaluation,
-jobs 5844550–5844612, 5856229).
+jobs 5844550–5844612, 5856229; failure videos 5863826/5863827).
 `make_run_config.py` writes a run's resolved robomimic config from a committed one.
 Jobs invoke upstream training/replay/rollout entry points with an explicit environment,
 configuration and external output location.

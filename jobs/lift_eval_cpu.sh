@@ -7,6 +7,7 @@
 #   mkdir -p "$HPCWORK/franka-il/runs/logs"
 #   sbatch --output="$HPCWORK/franka-il/runs/logs/%x-%j.out" jobs/lift_eval_cpu.sh 5824723 "20 40"
 #   sbatch ... jobs/lift_eval_cpu.sh 5824723 200 1    # report the selected epoch on a fresh seed
+#   sbatch ... jobs/lift_eval_cpu.sh 5824723 180 0 5  # re-run and film only episode 5 (failure review)
 #SBATCH --job-name=lift-eval
 #SBATCH --partition=devel
 #SBATCH --cpus-per-task=2
@@ -14,9 +15,10 @@
 #SBATCH --time=00:59:00
 set -euo pipefail
 
-TRAIN_JOB="${1:?usage: sbatch jobs/lift_eval_cpu.sh <training job ID> [\"epoch epoch ...\"] [seed]}"
+TRAIN_JOB="${1:?usage: sbatch jobs/lift_eval_cpu.sh <training job ID> [\"epoch epoch ...\"] [seed] [\"episode ...\"]}"
 EPOCHS="${2:-}"
 SEED="${3:-0}"
+VIDEO_LIST="${4:-}"   # episode indices to film; default: the first 3 episodes
 
 module load GCCcore/13.3.0 Python/3.11.5 Mesa/24.1.3   # Mesa provides libOSMesa (no GPU here)
 export MUJOCO_GL=osmesa PYOPENGL_PLATFORM=osmesa
@@ -32,7 +34,7 @@ else
 fi
 OUT="$HPCWORK/franka-il/runs/lift_eval/${SLURM_JOB_ID:-local}"
 mkdir -p "$OUT"
-echo "job ${SLURM_JOB_ID:-local} on $(hostname) | repo $(git rev-parse --short HEAD) | train job $TRAIN_JOB | seed $SEED | ${#MODELS[@]} checkpoints | out $OUT"
+echo "job ${SLURM_JOB_ID:-local} on $(hostname) | repo $(git rev-parse --short HEAD) | train job $TRAIN_JOB | seed $SEED | videos ${VIDEO_LIST:-first 3} | ${#MODELS[@]} checkpoints | out $OUT"
 
 # Evaluation settings (0.4 design):
 #   50 rollouts (paper): 45/50 still leaves a 95% Wilson interval of 79-96%, so differences
@@ -49,6 +51,8 @@ eval_args=(
     --seed "$SEED"
     --video_episodes 3
 )
+# shellcheck disable=SC2206  # word-split the episode list on purpose
+[[ -n "$VIDEO_LIST" ]] && eval_args+=(--video_list $VIDEO_LIST)
 "$PY" jobs/eval_checkpoints.py \
     --checkpoints "${MODELS[@]}" \
     --out "$OUT/eval.json" \

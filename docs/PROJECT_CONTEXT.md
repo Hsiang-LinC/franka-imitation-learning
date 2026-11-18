@@ -9,8 +9,8 @@
   checkpoints every 20 epochs). Compute decision: low-dim training on CPU, H100 for images (D1).
 - 0.4 done: paired rollout evaluation of all 10 checkpoints (seed 0, selection) and the
   selected epoch 200 on fresh seed 1: 49/50 (state-based; docs/BASELINE.md).
-- Next hands-on step: review the eval videos for failure modes, then post 0.4 evidence to
-  #23 and move to Can (phase 1 step 1).
+  Failure review done: missed grasps are never recovered (ph demos contain no recovery).
+- Next step: post 0.4 evidence to #23, then move to Can (phase 1 step 1).
 - GPU: account `default` reaches `c23g`, but the student quota is 3 GPU-h/month.
 - Teaching mode: Claude writes a tested skeleton; the user fills TODOs at learning points.
 - Two learning tracks agreed (D5). ACT implementation is open for phase 2.

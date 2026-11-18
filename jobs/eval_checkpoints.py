@@ -19,6 +19,7 @@ Usage:
     python jobs/eval_checkpoints.py --checkpoints <run>/models/model_epoch_*.pth --out <report.json>
     python jobs/eval_checkpoints.py ... --n_rollouts 3 --horizon 100     # quick smoke test
     python jobs/eval_checkpoints.py ... --video_dir <dir> --video_episodes 5
+    python jobs/eval_checkpoints.py ... --video_dir <dir> --video_list 5 35   # chosen episodes only
 """
 
 from __future__ import annotations
@@ -43,6 +44,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=0, help="env seed (initial states) and policy seed")
     p.add_argument("--video_dir", type=Path, default=None, help="write <ckpt>.mp4 here if given")
     p.add_argument("--video_episodes", type=int, default=5, help="episodes per checkpoint in the MP4")
+    p.add_argument("--video_list", type=int, nargs="+", default=None,
+                   help="record exactly these episode indices instead (all episodes still run, "
+                        "so episode i keeps its paired initial state)")
     p.add_argument("--camera", default="agentview")
     return p.parse_args()
 
@@ -118,7 +122,11 @@ def evaluate_checkpoint(ckpt_path: Path, args) -> dict:
     import torch
     from robomimic.scripts.run_trained_agent import rollout  # upstream loop, unchanged
 
-    write_video = args.video_dir is not None and args.video_episodes > 0
+    if args.video_list is not None:
+        record, suffix = set(args.video_list), "_ep" + "-".join(map(str, sorted(set(args.video_list))))
+    else:
+        record, suffix = set(range(args.video_episodes)), ""
+    write_video = args.video_dir is not None and bool(record)
     policy, env = load_policy_and_env(ckpt_path, args.seed, render_offscreen=write_video)
     # Policy-side randomness (GMM mode sampling) uses torch; reseed per checkpoint so episode i
     # draws the same random numbers for every checkpoint.
@@ -128,14 +136,14 @@ def evaluate_checkpoint(ckpt_path: Path, args) -> dict:
     writer = None
     if write_video:
         args.video_dir.mkdir(parents=True, exist_ok=True)
-        writer = imageio.get_writer(str(args.video_dir / f"{ckpt_path.stem}.mp4"), fps=20)
+        writer = imageio.get_writer(str(args.video_dir / f"{ckpt_path.stem}{suffix}.mp4"), fps=20)
 
     episodes = []
     t0 = time.time()
     for i in range(args.n_rollouts):
         stats, traj = rollout(
             policy=policy, env=env, horizon=args.horizon,
-            video_writer=writer if (writer is not None and i < args.video_episodes) else None,
+            video_writer=writer if (writer is not None and i in record) else None,
             video_skip=1, camera_names=[args.camera],
         )
         episodes.append(episode_record(i, stats, traj))
