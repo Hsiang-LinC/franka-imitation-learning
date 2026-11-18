@@ -69,51 +69,31 @@ def load_policy_and_env(ckpt_path: Path, seed: int, render_offscreen: bool):
     import torch
     import robomimic.utils.file_utils as FileUtils
 
-    # TODO(1) — restore the policy and build a seeded env.
-    #   a) policy, ckpt_dict = FileUtils.policy_from_checkpoint(ckpt_path=..., device=..., verbose=False)
-    #      This venv is CPU-only: pass torch.device("cpu"). The returned policy is a RolloutPolicy:
-    #      call it as policy(ob=obs) -> 7-D action; policy.start_episode() resets the LSTM state.
-    #   b) The env description travels inside the checkpoint: ckpt_dict["env_metadata"] is the
-    #      same dict as the dataset's data.attrs["env_args"] (you saw it in notebook §3).
-    #      Which key of it holds the keyword arguments passed to robosuite's Lift(...)?
-    #      Set the "seed" entry there to `seed` *before* building the env.
-    #   c) env, _ = FileUtils.env_from_checkpoint(ckpt_dict=ckpt_dict, render=False,
-    #                                             render_offscreen=render_offscreen, verbose=False)
-    #   Return (policy, env).
-    
-    # a) checkpoint -> policy（重建網路、載入權重、包成 RolloutPolicy）
     policy, ckpt_dict = FileUtils.policy_from_checkpoint(
         ckpt_path=str(ckpt_path), device=torch.device("cpu"), verbose=False
-    )
-
-    # b) 在建 env 之前，把 seed 放進要傳給 Lift(...) 的參數
+    )  # RolloutPolicy: policy(ob=obs) -> 7-D action; start_episode() resets the LSTM state
+    # env_metadata is the dataset's env_args; env_kwargs are passed to robosuite's Lift(...),
+    # which seeds its own placement generator at construction.
     ckpt_dict["env_metadata"]["env_kwargs"]["seed"] = seed
-
-    # c) 用同一個 ckpt_dict 重建模擬器
     env, _ = FileUtils.env_from_checkpoint(
         ckpt_dict=ckpt_dict, render=False, render_offscreen=render_offscreen, verbose=False
     )
     return policy, env
 
+
 def episode_record(index: int, stats: dict, traj: dict) -> dict:
     """One row of the report for one episode (upstream rollout() returns stats and traj)."""
-    # TODO(2) — fill the record.
-    #   stats = {"Return", "Horizon", "Success_Rate"} for this episode:
-    #     Horizon is the number of steps actually run (rollout stops at the first success).
-    #     Success_Rate is 1.0 or 0.0 for a single episode.
-    #   traj["initial_state_dict"]["states"] is the flat MuJoCo state at the episode start,
-    #     laid out as [time, qpos..., qvel...] (notebook §4: qpos = 7 arm hinges, 2 gripper
-    #     slides, then the cube's free joint = position xyz + quaternion wxyz).
-    #   Store the cube's initial xyz position (3 floats, round to 5 decimals) as
-    #   "cube_init_pos". Which slice of `states` is it? It is the fingerprint used to prove
-    #   that all checkpoints faced the same initial states.
+    # stats: Horizon = steps actually run (rollout stops at the first success),
+    #        Success_Rate = 1.0 or 0.0 for one episode.
+    # states = [time, qpos(16), qvel(15)]; qpos = 7 arm hinges, 2 gripper slides, then the
+    # cube's free joint (xyz + quaternion), so the cube's xyz is states[10:13]. It is the
+    # fingerprint that proves all checkpoints faced the same initial states.
     success, steps = stats["Success_Rate"], stats["Horizon"]
     states = traj["initial_state_dict"]["states"]
     return {
         "episode": index,
-        "success": bool(success),        # bool
-        "steps": int(steps),          # int
-        # list of 3 floats
+        "success": bool(success),
+        "steps": int(steps),
         "cube_init_pos": [round(float(v), 5) for v in states[10:13]],
     }
 

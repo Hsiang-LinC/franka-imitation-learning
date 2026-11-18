@@ -44,8 +44,11 @@ pip constraints; no robosuite/MuJoCo. robomimic imports `six` without declaring 
 - Full paper run (2000 epochs × 100 steps) ≈ 3.2 h ≈ 13 core-h at 4 cores: fits one
   regular CPU job, or ≈4 `devel` chunks with `--resume` (resume untested).
 - Logged losses are identical epoch by epoch in both jobs (training seed 1, CPU).
-- Train loss (GMM NLL) 1.35 → −18.9; validation loss ≈ 2×10⁶ throughout. Validation loss
-  is not a checkpoint-selection criterion; select by rollouts (0.4).
+- Train loss (GMM NLL) 1.35 → −18.9; logged validation loss ≈ 2×10⁶. Cause: robomimic
+  computes validation in eval mode, where `low_noise_eval` replaces every GMM std by 1e-4.
+  Checked on epoch 200 (one batch of 100 sequences each): in train mode the NLL is −18.5 on train and
+  −18.2 on valid (no overfitting); in eval mode it is ≈2×10⁶ on both. The logged validation
+  loss is therefore uninformative for this config; select checkpoints by rollouts (0.4).
 
 ### Rollout seeding (robosuite 1.5)
 
@@ -54,6 +57,31 @@ robosuite 1.5 draws object placement from the env's own `default_rng(env_kwargs[
 which is `None` in the dataset metadata, so initial states are unseeded. Verified
 2026-11-17: same `np.random.seed` → different cube positions; `env_kwargs["seed"]=0` →
 identical. Paired checkpoint evaluation therefore needs the env seed set (0.4).
+
+### Closed-loop checkpoint evaluation (0.4, state-based)
+
+`jobs/lift_eval_cpu.sh` → `jobs/eval_checkpoints.py` (upstream `rollout()`, env seed set),
+checkpoints of training job 5824723, 50 rollouts, horizon 400, CPU. Each checkpoint takes
+1.5–5 min. Low-dim observations include the privileged cube state.
+
+Selection set, seed 0 (jobs 5844550, 5844568, 5844610–5844612; `paired` true across all
+jobs). Interval = 95% Wilson; steps = median over successful episodes.
+
+| Epoch | 20 | 40 | 60 | 80 | 100 | 120 | 140 | 160 | 180 | 200 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Successes / 50 | 1 | 15 | 14 | 14 | 35 | 39 | 44 | 50 | 49 | 50 |
+| Interval (%) | 0–10 | 19–44 | 17–42 | 17–42 | 56–81 | 65–87 | 76–94 | 93–100 | 90–100 | 93–100 |
+| Steps | 176 | 90 | 76.5 | 69.5 | 49 | 48 | 45.5 | 45 | 42 | 41 |
+
+- Success plateaus from epoch 160; 160/180/200 are indistinguishable. Paired comparison
+  (exact McNemar) separates 140 from 160 although the intervals overlap: 6 episodes
+  succeed only at 160, none only at 140 (p = 0.031).
+- Selected: epoch 200 (last checkpoint, tied best). Validation loss could not rank these.
+- **Report, fresh seed 1** (job 5856229, no initial state shared with seed 0): epoch 200
+  **49/50 (98%, 95% Wilson 90–100%)**, median 42 steps. The robomimic paper reports
+  100% for BC-RNN low-dim Lift ph (best checkpoint of 2000 epochs, mean of 3 training seeds).
+- Videos (first 3 episodes per checkpoint) are in the eval run folders; failure review
+  pending.
 
 ### Known install issue: egl_probe (robomimic dependency)
 
@@ -72,7 +100,7 @@ before installing robomimic. On nodes without a GPU, `get_available_devices()` r
 | Replay actions to MP4 | `robomimic/scripts/playback_dataset.py` |
 | Build observations if absent | `robomimic/scripts/dataset_states_to_obs.py` |
 | Train BC-RNN / Diffusion Policy | `robomimic/scripts/train.py` with configs from `robomimic/exps/templates/` |
-| Evaluate checkpoint | `robomimic/scripts/run_trained_agent.py` |
+| Evaluate checkpoint | `robomimic/scripts/run_trained_agent.py`; paired (seeded) evaluation: `jobs/eval_checkpoints.py` |
 
 ## Handoff
 

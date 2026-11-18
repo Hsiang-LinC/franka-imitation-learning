@@ -1,15 +1,16 @@
 # Session handoff
 
-## Current state (2026-11-17)
+## Current state (2026-11-18)
 
 - Phase 1, step 0: **Lift warm-up** (D4) on route B. Sim venv installed and pins
   validated by full Lift ph replay (docs/BASELINE.md). Dataset inspection notebook
   `notebooks/00_lift_warmup.ipynb` done (covers most of 0.2).
 - 0.3 done: trainer venv + 200-epoch BC-RNN low-dim Lift run on CPU (jobs 5824723/5824724,
   checkpoints every 20 epochs). Compute decision: low-dim training on CPU, H100 for images (D1).
-- Next hands-on step: 0.4, paired rollout evaluation of the saved checkpoints on CPU via a
-  thin `jobs/eval_checkpoints.py` that imports upstream `rollout()` and sets the env seed
-  (upstream `--seed` does not fix initial states; docs/BASELINE.md). 50 episodes, horizon 400.
+- 0.4 done: paired rollout evaluation of all 10 checkpoints (seed 0, selection) and the
+  selected epoch 200 on fresh seed 1: 49/50 (state-based; docs/BASELINE.md).
+- Next hands-on step: review the eval videos for failure modes, then post 0.4 evidence to
+  #23 and move to Can (phase 1 step 1).
 - GPU: account `default` reaches `c23g`, but the student quota is 3 GPU-h/month.
 - Teaching mode: Claude writes a tested skeleton; the user fills TODOs at learning points.
 - Two learning tracks agreed (D5). ACT implementation is open for phase 2.
@@ -36,7 +37,7 @@
   [exercise guide](../exercises/gymnasium/README.md).
 - Lift ph replay: 200/200 open-loop successes + MP4, CPU job 5813465 (docs/BASELINE.md).
 - BC-RNN low-dim Lift training on CPU: 200 epochs, ≈5.5 s/epoch (docs/BASELINE.md).
-- No policy evaluation has run.
+- Closed-loop evaluation: epoch 200 49/50 on a fresh seed, CPU job 5856229 (docs/BASELINE.md).
 
 ## Tracking
 
