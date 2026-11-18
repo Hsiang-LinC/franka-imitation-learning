@@ -7,7 +7,8 @@ earlier notebooks. Keep outputs small and free of private paths.
 
 | Planned notebook | Track | Inputs → outputs |
 |---|---|---|
-| 00_lift_warmup | A | Lift dataset, replay MP4, checkpoint → inspection notes, rollout results |
+| 00_lift_warmup | A | Lift dataset, replay MP4 → inspection notes |
+| 00b_lift_eval_analysis | A | `results/lift_eval_episodes.csv` → success and paired-outcome figures |
 | 01_square_data | A | Square ph/mh datasets → obs/action inspection, frozen split |
 | 02_bc_rnn_baseline | A | Run ID, checkpoint, rollout metrics → baseline analysis and videos |
 | Minimal diffusion policy | B | Low-dim Lift data → own DP, compared with upstream |

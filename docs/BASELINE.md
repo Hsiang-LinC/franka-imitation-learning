@@ -80,6 +80,10 @@ jobs). Interval = 95% Wilson; steps = median over successful episodes.
 - **Report, fresh seed 1** (job 5856229, no initial state shared with seed 0): epoch 200
   **49/50 (98%, 95% Wilson 90–100%)**, median 42 steps. The robomimic paper reports
   100% for BC-RNN low-dim Lift ph (best checkpoint of 2000 epochs, mean of 3 training seeds).
+- Figures and statistics: `notebooks/00b_lift_eval_analysis.ipynb` from
+  `results/lift_eval_episodes.csv` (one row per episode) →
+  ![success vs epoch](figures/lift_eval_success.png)
+  ![paired outcomes](figures/lift_eval_paired.png)
 - Videos: first 3 episodes per checkpoint in the eval run folders; the late failures were
   re-run with `--video_list` (jobs 5863826: epoch 180 seed 0 ep 5; 5863827: epoch 200
   seed 1 ep 35). Both re-runs reproduced all 50 episode records of the original jobs.
