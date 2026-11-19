@@ -10,8 +10,8 @@ Pass:   every demo succeeds. Divergence and first-success timing are reported fo
         information only, because a different patch version never matches bit for bit.
 
 Usage:
-    python jobs/lift_replay_check.py --dataset <low_dim_v15.hdf5> --out <report.json>
-    python jobs/lift_replay_check.py ... --limit 5      # quick smoke test
+    python jobs/replay_check.py --dataset <low_dim_v15.hdf5> --out <report.json>
+    python jobs/replay_check.py ... --limit 5      # quick smoke test
 """
 
 from __future__ import annotations
@@ -70,7 +70,8 @@ def first_true(flags: np.ndarray) -> int | None:
 def recorded_first_success(rewards: np.ndarray) -> int | None:
     """Step index of the first success in the recorded demo.
 
-    Lift's sparse reward is 1.0 once the task is solved after actions[i]. Compare with
+    The robomimic ph datasets store a sparse reward (0/1, checked for Lift, Can and
+    Square): 1.0 once the task is solved after actions[i]. Compare with
     ``>= 1.0`` rather than nonzero so a shaped (dense) reward would not count as success.
     """
     return first_true(rewards >= 1.0)

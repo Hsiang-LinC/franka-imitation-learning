@@ -17,8 +17,8 @@ Validated 2026-11-16: full open-loop action replay of Lift ph succeeds on these 
 
 ### Replay validation (Lift ph, `low_dim_v15.hdf5`)
 
-`jobs/lift_replay.sh` (CPU `devel`, job 5813465, 3.5 min, MaxRSS 2.4 GB):
-- `jobs/lift_replay_check.py`: **200/200** demos reach task success open-loop; first-success
+`jobs/replay.sh lift` (CPU `devel`, job 5813465, 3.5 min, MaxRSS 2.4 GB):
+- `jobs/replay_check.py`: **200/200** demos reach task success open-loop; first-success
   step matches the recording for 169, differs by ±1 step for 31. The dataset was recorded on
   robosuite 1.5.1; robomimic's version-mismatch warning is therefore harmless here.
 - State drift is dominated by qvel spikes at contact (max qpos error ≈ 0.08, max qvel error
