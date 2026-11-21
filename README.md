@@ -40,8 +40,14 @@ Upstream checkouts, datasets, checkpoints and videos live outside this repositor
 
 ## Status
 
-Phase 1, Lift warm-up: stack switched to robosuite 1.5 + MuJoCo 3.x + robomimic v0.5+;
-pins pending replay validation. No
-replay, training or evaluation has run.
+**Phase 1, step 0 — Lift warm-up complete.** All 200 Lift ph demonstrations
+succeeded in open-loop replay. The state-based BC-RNN trained for 200 epochs on
+CPU. After reloading, the selected checkpoint succeeded in 49/50 closed-loop
+rollouts on a fresh seed (seed 1).
+
+**Next in Phase 1.** Replay the Can ph demonstrations and record task success
+and a video before training. See the [baseline guide](docs/BASELINE.md) for
+run evidence and the [roadmap](docs/ROADMAP.md) for the remaining steps.
+
 Track work in [Issues](https://github.com/Hsiang-LinC/franka-imitation-learning/issues)
 and the [Project](https://github.com/users/Hsiang-LinC/projects/3/views/1).
