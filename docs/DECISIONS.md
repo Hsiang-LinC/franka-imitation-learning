@@ -39,8 +39,8 @@ version and the affected methods are rerun.
 Run the full replay → train → reload → rollout → video loop on robomimic Lift
 (proficient-human, low-dim) first. Lift is short and reliably learnable, so failures
 isolate environment/rendering/Slurm problems rather than task difficulty. Use the same
-pins as the main task so the environment carries over unchanged. Lift results
-are a pipeline check, not portfolio results.
+pipeline (scripts, rendering, Slurm setup) as the main task; simulator versions follow D6.
+Lift results are a pipeline check, not portfolio results.
 
 ## D5 · Two learning tracks (2026-11-15)
 
@@ -50,6 +50,24 @@ are a pipeline check, not portfolio results.
   action chunking) in notebooks or `src/`, trained on the same low-dim data and compared
   against Track A. They exist to explain mechanisms; they never replace upstream
   results in headline tables unless evaluated under the frozen protocol.
+
+## D6 · Simulator pins per dataset (2026-11-21)
+
+Pin robosuite and MuJoCo separately for each dataset. Pick the combination on which the
+most demos succeed under open-loop action replay. On a tie, pick the newer version. Only
+combinations that satisfy each package's declared dependencies count. robomimic and the
+trainer env stay shared.
+
+Current pins: Lift and Can use robosuite 1.5.2 + MuJoCo 3.9.0 (`sim`). Square uses
+robosuite 1.5.1 + MuJoCo 3.2.7 (`sim-square`). Evidence is in docs/BASELINE.md.
+
+Reasons:
+- No single MuJoCo version maximises all three datasets. Lift and Can replay best on
+  3.9.0, Square on 3.2.x.
+- The policy learns from these demos, so the simulator should match them as closely as
+  possible. The goal is imitation learning in simulation, not the newest physics.
+- Methods are compared within a task, so every policy on a task must use that task's pin.
+  Success rates across tasks are not compared on a common simulator.
 
 ## Open question · ACT implementation (phase 2)
 

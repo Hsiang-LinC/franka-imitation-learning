@@ -18,12 +18,14 @@ module load GCCcore/13.3.0 Python/3.11.5 Mesa/24.1.3   # Mesa provides libOSMesa
 export MUJOCO_GL=osmesa PYOPENGL_PLATFORM=osmesa
 
 TASK="${1:-lift}"
-PY="$WORK/franka-il/venvs/sim/bin/python"
+# Per-dataset pins (DECISIONS D6): Square replays best on robosuite 1.5.1 + MuJoCo 3.2.7.
+case "$TASK" in square) SIM=sim-square ;; *) SIM=sim ;; esac
+PY="$WORK/franka-il/venvs/$SIM/bin/python"
 ROBOMIMIC="$WORK/franka-il/src/robomimic"
 DATA="$HPCWORK/franka-il/data/robomimic_v15/$TASK/ph/low_dim_v15.hdf5"
 OUT="$HPCWORK/franka-il/runs/${TASK}_replay/${SLURM_JOB_ID:-local}"
 mkdir -p "$OUT"
-echo "task $TASK | job ${SLURM_JOB_ID:-local} on $(hostname) | repo $(git rev-parse --short HEAD) | out $OUT"
+echo "task $TASK | env $SIM | job ${SLURM_JOB_ID:-local} on $(hostname) | repo $(git rev-parse --short HEAD) | out $OUT"
 
 # A. Full replay check. Keep going if some demos fail so the video still renders;
 #    the job's exit code reports A's verdict at the end.

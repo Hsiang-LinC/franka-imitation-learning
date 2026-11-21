@@ -2,18 +2,57 @@
 
 ## Stack (route B, D1)
 
-Validated 2026-11-16: full open-loop action replay of Lift ph succeeds on these pins
-(evidence below). Installed sim env: `requirements/sim.txt`.
+Simulator pins are chosen per dataset by action replay (D6, evidence below). Two sim envs:
+`sim` (`requirements/sim.txt`) for Lift and Can, `sim-square` (`requirements/sim-square.txt`)
+for Square. They differ only in robosuite and MuJoCo.
 
 | Component | Pin | Why |
 |---|---|---|
 | Python | CLAIX `Python/3.11.5` (with `GCCcore/13.3.0`) | Wheels exist for all packages below |
-| robosuite | v1.5.2 tag, `824ac14cefcfb7ec125fe5eb2e0bad7364466154` | Latest release; v1.5 datasets target it |
-| MuJoCo | `mujoco==3.9.0` | robosuite caps `<3.10` on master: 3.10 changed `mj_fullM` and breaks its controllers. The v1.5.2 release lacks the cap, so pin explicitly. Fallback: 3.3.x if replay drifts |
+| robosuite | `sim`: v1.5.2 tag, `824ac14cefcfb7ec125fe5eb2e0bad7364466154`; `sim-square`: v1.5.1 tag, `51cc01785bab80ffeed20da15e67d7dd4140e76a` | The datasets record v1.5.1; 1.5.1 vs 1.5.2 gave identical replay outcomes. v1.5.2 requires `mujoco>=3.3.0`, so Square needs v1.5.1 |
+| MuJoCo | `sim`: `mujoco==3.9.0`; `sim-square`: `mujoco==3.2.7` | Highest replay success per dataset (table below). robosuite master caps `<3.10`: 3.10 changed `mj_fullM` and breaks its controllers; the v1.5.x releases lack the cap |
 | robomimic | master `d309eaecc18acf4152a830a895a6984b8ac71b05` (2026-08-09) | v0.5.0 + 15 fixes, incl. the current dataset HF repo; has `DiffusionPolicyUNet` |
 | PyTorch | sim env `torch==2.15.0+cpu`; trainer env `torch==2.15.0` (PyPI CUDA 13.2 build, H100 driver unverified) | Checkpoints must load across envs |
 | Lift data | HF `robomimic/robomimic_datasets` `v1.5/lift/ph/demo_v15.hdf5` (sha256 `68f2a8cf…f37`), `low_dim_v15.hdf5` (`2067777c…aeb540`) | Hugging Face LFS hashes, to verify after download |
 | Rendering | `Mesa/24.1.3` module, `MUJOCO_GL=osmesa` (verified in a CPU job) | No system libOSMesa on CLAIX |
+
+### Replay success per MuJoCo version (ph `low_dim_v15.hdf5`, 200 demos each)
+
+`jobs/replay_check.py` replays each demo's recorded actions open-loop from its recorded
+initial state and checks task success. Every demo is recorded as successful.
+`jobs/pin_sweep.sh` layers other robosuite/MuJoCo versions over the `sim` venv.
+
+| Task | 3.2.3–3.2.6 | 3.2.7 | 3.3.0 | 3.9.0 | Pin |
+|---|---|---|---|---|---|
+| Lift | – | 199 | 200 | **200** | 3.9.0 |
+| Can | – | 189 | 191 | **194** | 3.9.0 |
+| Square | 181 each | **181** | 176 | 162 | 3.2.7 |
+
+- Jobs (robosuite 1.5.1 unless noted). Lift: 5928735, 5928932, 5813465 (1.5.2). Can:
+  5928736, 5928933, 5896700 (1.5.2). Square: 5927735, 5927736, 5928123, 5928124, 5920277,
+  5920278, 5920414; robosuite 1.5.2 on 3.3.0 and 3.9.0: 5920415, 5897045.
+- robosuite 1.5.1 and 1.5.2 give the same outcome on every Square demo. The dataset stores
+  the scene MJCF, so robosuite contributes only the controller and the success check.
+- Square on MuJoCo 3.2.3–3.2.7 is bit-identical (same failures, same max state error per
+  demo). The first change is at 3.3.0.
+- Lift and Can improve with newer MuJoCo while Square degrades. The datasets record only
+  robosuite `env_version` 1.5.1, and robosuite 1.5.1 accepts any `mujoco>=3.2.3`, so the
+  datasets were probably converted from the 2021 recordings with different MuJoCo versions.
+  This is an inference; the MuJoCo version is not stored.
+- Square failures are post-contact. On 3.9.0: 20 jam on the peg, 10 succeed only after
+  extra hold steps, 8 slip in transport. On 3.2.7: 7, 8 and 4. Twelve demos fail on every
+  version (7, 12, 60, 66, 77, 106, 139, 153, 158, 164, 196, 199). Can failures diverge
+  only after release (error < 2 mm at release).
+- The version effect on Square is not noise: 3.2.7 vs 3.9.0, 25 vs 6 discordant demos
+  (exact McNemar p = 0.0009).
+- Observation: environment consistency with the data matters more for contact-rich tasks.
+  Replay success measures that consistency, not the ceiling of a learned policy.
+- Lesson: the pins were first validated on Lift, the least sensitive task. Validate on the
+  most contact-sensitive task.
+
+Square on the `sim-square` venv (`jobs/replay.sh square`, job 5929426, 10 min): 181/200,
+per-demo outcomes and max state errors identical to the overlay run 5920277. In the MP4
+(`20_percent_valid`, 4 demos) demo_32 now succeeds; on 3.9.0 it jammed on the peg.
 
 ### Replay validation (Lift ph, `low_dim_v15.hdf5`)
 

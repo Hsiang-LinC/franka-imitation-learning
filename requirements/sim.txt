@@ -1,5 +1,5 @@
 # Simulator env (CPU): CLAIX GCCcore/13.3.0 + Python/3.11.5, `python -m pip freeze --exclude-editable`.
-# Validated 2026-11-16 by full Lift ph action replay (200/200, CPU job 5813465).
+# Lift and Can (D6). ph action replay: Lift 200/200 (CPU job 5813465), Can 194/200 (job 5896700).
 # Not listed (editable source installs; clone outside the repo, checkout, `pip install -e .`):
 #   robosuite 1.5.2  824ac14cefcfb7ec125fe5eb2e0bad7364466154
 #   robomimic 0.5.0  d309eaecc18acf4152a830a895a6984b8ac71b05
