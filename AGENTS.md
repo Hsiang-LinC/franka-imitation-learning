@@ -60,8 +60,8 @@ the simulator/trainer venv; the foundations venv is not the robot environment.
 
 Keep simulator and offline training environments separate, including BC-RNN; disable
 in-training simulator rollouts when using a simulator-free trainer and evaluate saved
-checkpoints separately. Pin robosuite, MuJoCo and robomimic against the dataset; prefer the newest versions
-that pass action replay.
+checkpoints separately. Pin robosuite and MuJoCo per dataset (docs/DECISIONS.md D6): most demos succeeding
+under action replay first, newer version on ties; robomimic stays shared.
 Verify action playback before training. Use CLAIX CPU jobs for simulation and low-dim
 training, H100 jobs for image-based training (docs/DECISIONS.md D1). GPU interactive display is an optional, separately verified workflow.
 Obtain explicit approval before paid cloud GPU provisioning or spend.

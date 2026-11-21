@@ -1,6 +1,6 @@
 # Session handoff
 
-## Current state (2026-11-18)
+## Current state (2026-11-21)
 
 - Phase 1, step 0: **Lift warm-up** (D4) on route B. Sim venv installed and pins
   validated by full Lift ph replay (docs/BASELINE.md). Dataset inspection notebook
@@ -10,7 +10,9 @@
 - 0.4 done: paired rollout evaluation of all 10 checkpoints (seed 0, selection) and the
   selected epoch 200 on fresh seed 1: 49/50 (state-based; docs/BASELINE.md).
   Failure review done: missed grasps are never recovered (ph demos contain no recovery).
-- Next step: post 0.4 evidence to #23, then move to Can (phase 1 step 1).
+- Phase 1 step 1 (Can/Square replay): per-dataset simulator pins chosen by a MuJoCo
+  version sweep (D6): Lift/Can on `sim` (MuJoCo 3.9.0), Square on `sim-square` (3.2.7).
+  Square replays 181/200 at best; evidence in docs/BASELINE.md.
 - GPU: account `default` reaches `c23g`, but the student quota is 3 GPU-h/month.
 - Teaching mode: Claude writes a tested skeleton; the user fills TODOs at learning points.
 - Two learning tracks agreed (D5). ACT implementation is open for phase 2.
@@ -26,8 +28,8 @@
   OSMesa rendering verified inside a CPU job (5813465).
 - Planned locations: upstream checkouts and venvs in `$WORK/franka-il/{src,venvs}`;
   data and runs in `$HPCWORK/franka-il/{data,runs}`.
-- `.venvs/franka-foundations` (Python 3.11.5) is only for the optional Gymnasium
-  exercise. Its activation scripts were repaired on 2026-11-15 after a path move.
+- Venvs: `$WORK/franka-il/venvs/{sim,sim-square,train}`. The optional Gymnasium venv was
+  deleted on 2026-11-21; recreate it from `exercises/gymnasium/README.md` if needed.
   Venvs are location-dependent: recreate rather than move; use explicit interpreter
   paths in Slurm jobs.
 

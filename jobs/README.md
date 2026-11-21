@@ -1,7 +1,8 @@
 # CLAIX jobs
 
 Add Slurm scripts after validating the pinned upstream commands and resource settings.
-Validated: `lift_replay.sh` (Lift replay check + MP4, CPU job 5813465);
+Validated: `replay.sh` (replay check + MP4, CPU job 5813465; Square uses the `sim-square` venv, D6);
+`pin_sweep.sh` (replay check with other robosuite/MuJoCo versions layered over `sim`);
 `lift_bc_rnn_cpu.sh` (BC-RNN low-dim Lift on CPU, jobs 5824723/5824724).
 `lift_eval_cpu.sh` + `eval_checkpoints.py` (paired closed-loop checkpoint evaluation,
 jobs 5844550–5844612, 5856229; failure videos 5863826/5863827).
