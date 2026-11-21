@@ -70,7 +70,7 @@ per-demo outcomes and max state errors identical to the overlay run 5920277. In 
 Trainer venv (`requirements/train.txt`): robomimic editable, installed with `sim.txt` as
 pip constraints; no robosuite/MuJoCo. robomimic imports `six` without declaring it.
 
-`jobs/lift_bc_rnn_cpu.sh` (CPU `devel`, 200 epochs, in-training rollouts off), config =
+`jobs/bc_rnn_cpu.sh lift 200 20` (then `lift_bc_rnn_cpu.sh`; CPU `devel`, 200 epochs, in-training rollouts off), config =
 `configs/lift/bc_rnn_low_dim.json` + overrides recorded in the job script:
 
 | Job | Cores | Elapsed | Train epoch (median) | Valid epoch | MaxRSS |
@@ -99,7 +99,7 @@ identical. Paired checkpoint evaluation therefore needs the env seed set (0.4).
 
 ### Closed-loop checkpoint evaluation (0.4, state-based)
 
-`jobs/lift_eval_cpu.sh` → `jobs/eval_checkpoints.py` (upstream `rollout()`, env seed set),
+`jobs/eval_cpu.sh lift` (then `lift_eval_cpu.sh`) → `jobs/eval_checkpoints.py` (upstream `rollout()`, env seed set),
 checkpoints of training job 5824723, 50 rollouts, horizon 400, CPU. Each checkpoint takes
 1.5–5 min. Low-dim observations include the privileged cube state.
 

@@ -76,7 +76,7 @@ def load_policy_and_env(ckpt_path: Path, seed: int, render_offscreen: bool):
     policy, ckpt_dict = FileUtils.policy_from_checkpoint(
         ckpt_path=str(ckpt_path), device=torch.device("cpu"), verbose=False
     )  # RolloutPolicy: policy(ob=obs) -> 7-D action; start_episode() resets the LSTM state
-    # env_metadata is the dataset's env_args; env_kwargs are passed to robosuite's Lift(...),
+    # env_metadata is the dataset's env_args; env_kwargs are passed to the robosuite env (Lift, ...),
     # which seeds its own placement generator at construction.
     ckpt_dict["env_metadata"]["env_kwargs"]["seed"] = seed
     env, _ = FileUtils.env_from_checkpoint(
@@ -85,36 +85,44 @@ def load_policy_and_env(ckpt_path: Path, seed: int, render_offscreen: bool):
     return policy, env
 
 
-def episode_record(index: int, stats: dict, traj: dict) -> dict:
+# Free joint of the task object, per robosuite env. Can's scene also holds Milk, Bread and
+# Cereal (parked, not part of the task), so "the first free joint" would be the wrong object.
+TASK_OBJECT_JOINT = {"Lift": "cube_joint0", "PickPlaceCan": "Can_joint0",
+                     "NutAssemblySquare": "SquareNut_joint0"}
+
+
+def object_state_slice(env) -> slice:
+    """Where the task object's xyz sits in the flattened state [time, qpos, qvel]."""
+    sim = env.env.sim
+    start, _ = sim.model.get_joint_qpos_addr(TASK_OBJECT_JOINT[env.name])
+    return slice(1 + start, 1 + start + 3)  # +1: states[0] is time
+
+
+def episode_record(index: int, stats: dict, traj: dict, obj: slice) -> dict:
     """One row of the report for one episode (upstream rollout() returns stats and traj)."""
     # stats: Horizon = steps actually run (rollout stops at the first success),
     #        Success_Rate = 1.0 or 0.0 for one episode.
-    # states = [time, qpos(16), qvel(15)]; qpos = 7 arm hinges, 2 gripper slides, then the
-    # cube's free joint (xyz + quaternion), so the cube's xyz is states[10:13]. It is the
-    # fingerprint that proves all checkpoints faced the same initial states.
+    # init_state = the full initial MuJoCo state; it is the fingerprint that proves all
+    # checkpoints faced the same initial states. object_init_pos is the task object's xyz
+    # (cube, can or square nut) for analysis.
     success, steps = stats["Success_Rate"], stats["Horizon"]
-    states = traj["initial_state_dict"]["states"]
+    states = np.asarray(traj["initial_state_dict"]["states"])
     return {
         "episode": index,
         "success": bool(success),
         "steps": int(steps),
-        "cube_init_pos": [round(float(v), 5) for v in states[10:13]],
+        "object_init_pos": [round(float(v), 5) for v in states[obj]],
+        "init_state_sha1": hashlib.sha1(np.round(states[1:], 6).tobytes()).hexdigest()[:12],
     }
 
 
 def check_paired(results: list[dict]) -> bool:
-    """True if episode i started from the same cube position for every checkpoint."""
+    """True if episode i started from the same full initial state for every checkpoint."""
     # Rows = checkpoints, columns = episodes; paired means every column is constant.
-    # Comparing each row with the first suffices (equality is transitive).
     if len(results) <= 1:
         return True
-    if len({len(r["episodes"]) for r in results}) != 1:
-        return False
-    ref = np.array([e["cube_init_pos"] for e in results[0]["episodes"]])
-    return all(
-        np.allclose([e["cube_init_pos"] for e in r["episodes"]], ref, atol=1e-6)
-        for r in results[1:]
-    )
+    ref = [e["init_state_sha1"] for e in results[0]["episodes"]]
+    return all([e["init_state_sha1"] for e in r["episodes"]] == ref for r in results[1:])
 
 
 def evaluate_checkpoint(ckpt_path: Path, args) -> dict:
@@ -138,6 +146,7 @@ def evaluate_checkpoint(ckpt_path: Path, args) -> dict:
         args.video_dir.mkdir(parents=True, exist_ok=True)
         writer = imageio.get_writer(str(args.video_dir / f"{ckpt_path.stem}{suffix}.mp4"), fps=20)
 
+    obj = object_state_slice(env)
     episodes = []
     t0 = time.time()
     for i in range(args.n_rollouts):
@@ -146,7 +155,7 @@ def evaluate_checkpoint(ckpt_path: Path, args) -> dict:
             video_writer=writer if (writer is not None and i in record) else None,
             video_skip=1, camera_names=[args.camera],
         )
-        episodes.append(episode_record(i, stats, traj))
+        episodes.append(episode_record(i, stats, traj, obj))
     if writer is not None:
         writer.close()
 
