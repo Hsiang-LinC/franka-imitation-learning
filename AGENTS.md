@@ -2,14 +2,19 @@
 
 ## Goal and teaching workflow
 
-Build an end-to-end imitation-learning project on fixed simulated Franka three-cube
-stacking. Study how policy methods, demonstration budgets and action execution settings
+Build an end-to-end imitation-learning project on fixed simulated Franka manipulation
+(robomimic Lift → Can → Square; docs/DECISIONS.md D1). Study how policy methods, demonstration budgets and action execution settings
 affect closed-loop task performance. The robot stays fixed; the learned policy and
 its execution settings are the experimental variables.
 
 Follow three phases: (1) upstream BC-RNN baseline, (2) matched ACT and Diffusion Policy
-comparison, (3) controlled improvements and portfolio. BC-RNN is required for phase 1.
+comparison, (3) controlled improvements and portfolio. BC-RNN is required for phase 1;
+start phase 1 with a robomimic Lift warm-up on the same pins (docs/DECISIONS.md D4).
 Gymnasium and FK/IK exercises are optional supporting lessons, not entry gates.
+
+Two tracks (D5): Track A uses upstream code for all reported results. Track B is the
+learner's small from-scratch implementations (e.g. diffusion, action chunking) for
+understanding; these are intended learning code, not forbidden upstream copies.
 
 The user is the learner and main implementer. Explain purpose, inputs, outputs and
 success checks before each hands-on step. Discuss workflow and scope before creating
@@ -29,10 +34,11 @@ close an issue merely because a plan or scaffold exists.
 
 ## Repository and upstream boundaries
 
-Use upstream MimicGen configuration generation and robomimic training/rollout code for
-the baseline. Pin external repositories by commit; keep their checkouts outside this
+Use upstream robomimic config generation, training and rollout code for the baseline. Pin external repositories by commit; keep their checkouts outside this
 repository. Do not copy upstream implementations or introduce local train/evaluate
 wrappers without a demonstrated need. Verify entry points against the chosen revision.
+Keep docs short and current: replace superseded content (Git keeps history) instead of
+appending logs; record run evidence in the relevant issue.
 
 Notebooks are learning narratives, small inspections and result analysis. One notebook
 has one purpose and explicit prerequisites/outputs. Do not run long training implicitly
@@ -46,11 +52,18 @@ See notebooks/README.md and docs/BASELINE.md for the planned structure and hando
 
 ## Compute, compatibility and evidence
 
+CLAIX must not use Anaconda/Conda. Prefer standard Python venv and python -m pip.
+Clone upstream sources and checkout pinned commits before editable pip installation
+when source installation is required. Do not install Conda or uv as prerequisites.
+Select a supported Python version from the available HPC environment before creating
+the simulator/trainer venv; the foundations venv is not the robot environment.
+
 Keep simulator and offline training environments separate, including BC-RNN; disable
 in-training simulator rollouts when using a simulator-free trainer and evaluate saved
-checkpoints separately. Pin robosuite, MuJoCo, MimicGen and robomimic against the dataset.
-Verify action playback before training. Use CLAIX CPU jobs for simulation and H100 jobs
-for training. GPU interactive display is an optional, separately verified workflow.
+checkpoints separately. Pin robosuite, MuJoCo and robomimic against the dataset; prefer the newest versions
+that pass action replay.
+Verify action playback before training. Use CLAIX CPU jobs for simulation and low-dim
+training, H100 jobs for image-based training (docs/DECISIONS.md D1). GPU interactive display is an optional, separately verified workflow.
 Obtain explicit approval before paid cloud GPU provisioning or spend.
 
 Record commands, commits, versions, seeds, artifact checksums and actual outcomes.

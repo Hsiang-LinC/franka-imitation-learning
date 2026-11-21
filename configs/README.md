@@ -1,8 +1,10 @@
 # Experiment configurations
 
 Store project-specific settings derived from pinned upstream configuration generators.
-No BC-RNN config is validated yet. Add it after inspecting dataset paths, observation
-keys and the selected upstream revision. Record its upstream source and modifications.
+`lift/bc_rnn_low_dim.json` is the unmodified paper config from robomimic `d309eae`:
+`python robomimic/scripts/generate_paper_configs.py --dataset_dir DATA_DIR --output_dir OUTPUT_DIR`
+(file `core/lift/ph/low_dim/bc_rnn.json`). Jobs resolve it per run with
+`jobs/make_run_config.py` and list their overrides in the job script.
 
 Use the same trainer for different experiments; express policy parameters, seeds and
 budgets through configs rather than copied scripts. Resolve external storage paths at

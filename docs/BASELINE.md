@@ -1,65 +1,140 @@
-# Baseline: upstream code and execution flow
+# Baseline: pins, entry points and handoffs
 
-## Scope
+## Stack (route B, D1)
 
-Fixed task: Franka three-cube stacking, public MimicGen `stack_three_d0.hdf5`.
-First method: robomimic BC-RNN. Use published demonstrations; generating new MimicGen
-data is not required for phase 1. The upstream pipeline exists, but has not been
-validated in this project. All robot installation/training/rollout checks are pending.
+Validated 2026-11-16: full open-loop action replay of Lift ph succeeds on these pins
+(evidence below). Installed sim env: `requirements/sim.txt`.
 
-## Sources and entry points
-
-Paths below are relative to each external checkout. Links describe upstream branches;
-commands and configuration fields must be checked against pinned revisions before use.
-
-| Work | Existing code/resource | Project adaptation |
+| Component | Pin | Why |
 |---|---|---|
-| Install compatible stack | [MimicGen installation](https://github.com/NVlabs/mimicgen/blob/main/docs/introduction/installation.md) | Pin full dependency set and verify CLAIX CPU rendering/H100 training |
-| Download data | [MimicGen core datasets](https://huggingface.co/datasets/amandlek/mimicgen_datasets/tree/main/core) | Only selected file; record source revision, license and checksum |
-| Replay actions | robomimic [playback_dataset.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/playback_dataset.py) | Saved initial state, action replay, separate task-success check, MP4 |
-| Build observations if absent | robomimic [dataset_states_to_obs.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/dataset_states_to_obs.py) | Inspect stored keys first; regenerate only what is needed |
-| Generate BC-RNN config | MimicGen [generate_core_training_configs.py](https://github.com/NVlabs/mimicgen/blob/main/mimicgen/scripts/generate_core_training_configs.py) | Select stack_three D0, map downloaded path, set output paths and chosen modality |
-| Train | robomimic [train.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/train.py) | Config and Slurm job; disable integrated rollout for offline-only training |
-| Deploy/evaluate | robomimic [run_trained_agent.py](https://github.com/ARISE-Initiative/robomimic/blob/master/robomimic/scripts/run_trained_agent.py) | Explicit checkpoint, reset/seed protocol, rollout horizon, metrics and video |
+| Python | CLAIX `Python/3.11.5` (with `GCCcore/13.3.0`) | Wheels exist for all packages below |
+| robosuite | v1.5.2 tag, `824ac14cefcfb7ec125fe5eb2e0bad7364466154` | Latest release; v1.5 datasets target it |
+| MuJoCo | `mujoco==3.9.0` | robosuite caps `<3.10` on master: 3.10 changed `mj_fullM` and breaks its controllers. The v1.5.2 release lacks the cap, so pin explicitly. Fallback: 3.3.x if replay drifts |
+| robomimic | master `d309eaecc18acf4152a830a895a6984b8ac71b05` (2026-08-09) | v0.5.0 + 15 fixes, incl. the current dataset HF repo; has `DiffusionPolicyUNet` |
+| PyTorch | sim env `torch==2.15.0+cpu`; trainer env `torch==2.15.0` (PyPI CUDA 13.2 build, H100 driver unverified) | Checkpoints must load across envs |
+| Lift data | HF `robomimic/robomimic_datasets` `v1.5/lift/ph/demo_v15.hdf5` (sha256 `68f2a8cf…f37`), `low_dim_v15.hdf5` (`2067777c…aeb540`) | Hugging Face LFS hashes, to verify after download |
+| Rendering | `Mesa/24.1.3` module, `MUJOCO_GL=osmesa` (verified in a CPU job) | No system libOSMesa on CLAIX |
 
-The [official reproduction tutorial](https://github.com/NVlabs/mimicgen/blob/main/docs/tutorials/reproducing_experiments.md)
-connects downloaded data to BC-RNN learning. The generic
-[train_bc_rnn.py example](https://github.com/ARISE-Initiative/robomimic/blob/master/examples/train_bc_rnn.py)
-is supplementary reading, not a second independent implementation to maintain.
+### Replay validation (Lift ph, `low_dim_v15.hdf5`)
 
-## Persistent handoff
+`jobs/lift_replay.sh` (CPU `devel`, job 5813465, 3.5 min, MaxRSS 2.4 GB):
+- `jobs/lift_replay_check.py`: **200/200** demos reach task success open-loop; first-success
+  step matches the recording for 169, differs by ±1 step for 31. The dataset was recorded on
+  robosuite 1.5.1; robomimic's version-mismatch warning is therefore harmless here.
+- State drift is dominated by qvel spikes at contact (max qpos error ≈ 0.08, max qvel error
+  ≈ 13 on the worst demo); judge replay by task success, not exact state equality.
+- Upstream `playback_dataset.py` MP4 of the `20_percent_valid` mask (4 demos): all lifts
+  visually confirmed. Use `--filter_key`, not `--n` (unseeded shuffle), and `--video_skip 1`.
+
+### Trainer env and CPU training cost (Lift ph, BC-RNN low-dim)
+
+Trainer venv (`requirements/train.txt`): robomimic editable, installed with `sim.txt` as
+pip constraints; no robosuite/MuJoCo. robomimic imports `six` without declaring it.
+
+`jobs/lift_bc_rnn_cpu.sh` (CPU `devel`, 200 epochs, in-training rollouts off), config =
+`configs/lift/bc_rnn_low_dim.json` + overrides recorded in the job script:
+
+| Job | Cores | Elapsed | Train epoch (median) | Valid epoch | MaxRSS |
+|---|---|---|---|---|---|
+| 5824723 | 4 | 20:16 | 5.66 s | 0.15 s | 1.0 GB |
+| 5824724 | 8 | 19:16 | 5.40 s | 0.14 s | 1.0 GB |
+
+- Both jobs used ≈1.9 cores on average (TotalCPU / elapsed); 8 cores gave no speed-up.
+  Use `-c 4`; `-c 2` is untested.
+- Full paper run (2000 epochs × 100 steps) ≈ 3.2 h ≈ 13 core-h at 4 cores: fits one
+  regular CPU job, or ≈4 `devel` chunks with `--resume` (resume untested).
+- Logged losses are identical epoch by epoch in both jobs (training seed 1, CPU).
+- Train loss (GMM NLL) 1.35 → −18.9; logged validation loss ≈ 2×10⁶. Cause: robomimic
+  computes validation in eval mode, where `low_noise_eval` replaces every GMM std by 1e-4.
+  Checked on epoch 200 (one batch of 100 sequences each): in train mode the NLL is −18.5 on train and
+  −18.2 on valid (no overfitting); in eval mode it is ≈2×10⁶ on both. The logged validation
+  loss is therefore uninformative for this config; select checkpoints by rollouts (0.4).
+
+### Rollout seeding (robosuite 1.5)
+
+`run_trained_agent.py --seed` seeds only `np.random` and `torch` (policy GMM sampling).
+robosuite 1.5 draws object placement from the env's own `default_rng(env_kwargs["seed"])`,
+which is `None` in the dataset metadata, so initial states are unseeded. Verified
+2026-11-17: same `np.random.seed` → different cube positions; `env_kwargs["seed"]=0` →
+identical. Paired checkpoint evaluation therefore needs the env seed set (0.4).
+
+### Closed-loop checkpoint evaluation (0.4, state-based)
+
+`jobs/lift_eval_cpu.sh` → `jobs/eval_checkpoints.py` (upstream `rollout()`, env seed set),
+checkpoints of training job 5824723, 50 rollouts, horizon 400, CPU. Each checkpoint takes
+1.5–5 min. Low-dim observations include the privileged cube state.
+
+Selection set, seed 0 (jobs 5844550, 5844568, 5844610–5844612; `paired` true across all
+jobs). Interval = 95% Wilson; steps = median over successful episodes.
+
+| Epoch | 20 | 40 | 60 | 80 | 100 | 120 | 140 | 160 | 180 | 200 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Successes / 50 | 1 | 15 | 14 | 14 | 35 | 39 | 44 | 50 | 49 | 50 |
+| Interval (%) | 0–10 | 19–44 | 17–42 | 17–42 | 56–81 | 65–87 | 76–94 | 93–100 | 90–100 | 93–100 |
+| Steps | 176 | 90 | 76.5 | 69.5 | 49 | 48 | 45.5 | 45 | 42 | 41 |
+
+- Success plateaus from epoch 160; 160/180/200 are indistinguishable. Paired comparison
+  (exact McNemar) separates 140 from 160 although the intervals overlap: 6 episodes
+  succeed only at 160, none only at 140 (p = 0.031).
+- Selected: epoch 200 (last checkpoint, tied best). Validation loss could not rank these.
+- **Report, fresh seed 1** (job 5856229, no initial state shared with seed 0): epoch 200
+  **49/50 (98%, 95% Wilson 90–100%)**, median 42 steps. The robomimic paper reports
+  100% for BC-RNN low-dim Lift ph (best checkpoint of 2000 epochs, mean of 3 training seeds).
+- Figures and statistics: `notebooks/00b_lift_eval_analysis.ipynb` from
+  `results/lift_eval_episodes.csv` (one row per episode) →
+  ![success vs epoch](figures/lift_eval_success.png)
+  ![paired outcomes](figures/lift_eval_paired.png)
+- Videos: first 3 episodes per checkpoint in the eval run folders; the late failures were
+  re-run with `--video_list` (jobs 5863826: epoch 180 seed 0 ep 5; 5863827: epoch 200
+  seed 1 ep 35). Both re-runs reproduced all 50 episode records of the original jobs.
+
+Failure modes (agentview only, so height is ambiguous; 2 late failures, so no causal claims):
+
+- **Missed grasp, no recovery.** One finger lands on the cube edge and tilts it; the
+  gripper lifts empty. Later the policy returns to a pre-grasp pose (epoch 180 descends again)
+  but never closes and hovers until step 400. Seen in epochs 100, 140 and 180.
+- **Divergence.** Epoch 200 seed 1 ep 35: fingers misaligned with the cube yaw, the palm
+  presses on the cube, then the arm drifts and twists into a posture absent from the
+  demos. Epochs 20/40 drift out of view the same way.
+- **Early checkpoints** (≤ 80) approach and hover without a grasp.
+- Every failure runs to the horizon: BC reproduces the proficient (ph) demos, which contain
+  no failed grasps and so no recovery behaviour; once off-distribution the errors compound.
+- Cube yaw (90°-symmetric, effective 0–45°) is a candidate factor, not a sufficient one:
+  failed episodes have 41.3° (seed 0 ep 5, rank 7 of 50) and 33.5° (seed 1 ep 35, rank 15);
+  the most-rotated seed 1 episode (44.5°) succeeds.
+
+### Known install issue: egl_probe (robomimic dependency)
+
+`egl_probe` 1.0.2 declares `cmake_minimum_required(VERSION 2.8.12)`, which CMake ≥4 rejects,
+and its `setup.py` calls the `cmake` executable, which is missing in pip's isolated build env.
+Verified fix (login node, 2026-11-15): install `setuptools wheel cmake` into the venv, then
+`CMAKE_POLICY_VERSION_MINIMUM=3.5 python -m pip install --no-build-isolation egl_probe`
+before installing robomimic. On nodes without a GPU, `get_available_devices()` returns `[]`, as expected.
+
+## Entry points (robomimic; verify flags at the pinned revision)
+
+| Step | Tool |
+|---|---|
+| Download datasets | `robomimic/scripts/download_datasets.py` |
+| Inspect dataset | `robomimic/scripts/get_dataset_info.py` |
+| Replay actions to MP4 | `robomimic/scripts/playback_dataset.py` |
+| Build observations if absent | `robomimic/scripts/dataset_states_to_obs.py` |
+| Train BC-RNN / Diffusion Policy | `robomimic/scripts/train.py` with configs from `robomimic/exps/templates/` |
+| Evaluate checkpoint | `robomimic/scripts/run_trained_agent.py`; paired (seeded) evaluation: `jobs/eval_checkpoints.py` |
+
+## Handoff
 
 ```text
-source dataset + simulator pins
-  -> validated action replay + data inspection
-  -> observation dataset + versioned episode split
-  -> BC-RNN config + offline H100 training
-  -> run ID + checkpoint + checksum
-  -> CPU closed-loop rollout
-  -> per-episode metrics + videos -> notebook analysis
+dataset + sim pins -> replay MP4 + inspection -> split -> config
+  -> CPU (low-dim) / H100 (image) training -> run ID + checkpoint + checksum
+  -> CPU rollout -> per-episode metrics + videos -> analysis notebook
 ```
 
-Each step reads saved inputs; no step depends on another notebook's live variables.
-Keep full data, manifests with private paths, logs, checkpoints and videos in approved
-shared storage outside Git. Commit sanitized settings, source revisions and summaries.
-Never put absolute university paths or secrets into a public notebook/config.
+Each step reads persisted inputs. Data, checkpoints, logs and videos live in shared
+storage outside Git; commit sanitized configs and summaries without absolute private paths.
 
-## Ownership and environment boundaries
+## Acceptance
 
-- External upstream checkouts retain their original code and pinned revision.
-- `configs/` owns our resolved experimental choices; `jobs/` invokes upstream entry points.
-- `notebooks/` explains and inspects the workflow; it does not duplicate training loops.
-- Offline training must not import/initialize a simulator accidentally. Check the pinned
-  trainer with rollout disabled; any remaining simulator-only import is a preflight blocker.
-- Record Python, PyTorch/CUDA and package versions independently per environment.
-- Introduce local reusable modules only when conversion or policy integration requires them.
-
-## Baseline acceptance
-
-A saved-state video or decreasing training loss alone is insufficient. Require own
-trained weights, successful checkpoint reload, closed-loop trials with successes/trials,
-representative failures, command/config records and artifact checksums. Do not promise
-a success-rate threshold before measuring the first complete run.
-
-A state-based first run may use privileged object state. Label it explicitly; later
-RGB + proprioception comparisons must not attribute input advantages to policy methods.
+Own trained weights, successful reload, closed-loop successes/trials, representative
+failures, recorded commands/configs/checksums. Loss curves or replay videos alone are
+insufficient. A low-dim run uses privileged object state; label it as such.

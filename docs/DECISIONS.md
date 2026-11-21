@@ -1,47 +1,58 @@
 # Decisions
 
-## D001 · Separate simulation and policy training
+Current decisions only. Superseded options (an earlier Isaac Lab/Isaac Sim route,
+exercise-first ordering, optional BC-RNN) are kept in Git history.
 
-**Context.** Isaac Sim has RTX host requirements. University compute nodes can cover CPU work and may provide compatible GPUs for PyTorch.
+## D1 · Simulator, task and compute split (revised 2026-11-17)
 
-**Options.** A single supported RTX host simplifies a tutorial smoke run. Separate simulation and training hosts require a dataset/checkpoint handoff and allow university resources to cover training.
+Current stack: robosuite v1.5.x + MuJoCo 3.x + robomimic v0.5+, with robomimic's
+v1.5 Franka datasets. Task ladder: Lift (warm-up) → Can → **Square** (main task);
+Transport/ToolHang are optional stretch tasks. Reasons: BC-RNN and Diffusion Policy
+share one maintained framework, and Square has published Diffusion Policy results to
+sanity-check against. This replaces MimicGen `stack_three_d0`, whose robosuite ≤1.4.1
+pin blocked modern MuJoCo and robomimic's Diffusion Policy.
 
-**Decision.** Keep the official Isaac Lab workflow for simulation and use separate environments for training and rollout. Define the handoff with a versioned manifest, checksums and observation/action metadata. Use the university first. Recheck this decision if the pinned official trainer imports simulator-only libraries or if transfer is restricted.
+MuJoCo needs no RTX GPU (unlike Isaac Sim): physics runs on CPU and rendering uses
+OpenGL via OSMesa (CPU) or EGL. Simulation runs in CLAIX CPU jobs. Offline training
+runs in a separate, simulator-free Python environment: **low-dim training on CPU**,
+H100 jobs reserved for image-based training (RGB encoders) and phase-2 methods where
+CPU is measured too slow. Reason: BC-RNN low-dim Lift trains at ≈5.5 s/epoch on CPU and
+does not speed up beyond ~2 cores (docs/BASELINE.md), so a full 2000-epoch run costs
+≈13 core-h, while the student GPU quota is 3 GPU-h/month and GPU queues are long.
+Datasets and checkpoints move through shared storage with checksums.
 
-## D002 · Freeze the benchmark before ACT
+## D2 · Baseline first, upstream code reused
 
-**Context.** Model comparison requires the same data, observations and rollout protocol.
+Phase 1 reproduces BC-RNN end to end with upstream robomimic entry points;
+phase 2 compares ACT and Diffusion Policy; phase 3 runs controlled sweeps and packages
+the portfolio. We own configs, Slurm jobs, notebooks and evidence, not copies of
+upstream trainers. Gymnasium and FK/IK are optional lessons.
 
-**Options.** Use the tutorial rollout alone for the baseline, or freeze a reusable evaluator and test manifest after the baseline smoke run.
+## D3 · Freeze the benchmark before headline comparisons
 
-**Decision.** Use the tutorial rollout for M5 integration and freeze the shared evaluator in M6 before ACT evaluation. Any protocol revision gets a new version and requires rerunning affected comparisons.
+Phase 1 uses development rollouts. Before ACT/Diffusion headline numbers, freeze the
+evaluator, reset lists (ID/OOD) and success predicate. Any protocol change gets a new
+version and the affected methods are rerun.
 
-## D003 · Use MuJoCo/MimicGen and make ACT and Diffusion Policy core
+## D4 · Lift warm-up before the main task (2026-11-15)
 
-BC-RNN optionality below is historical and superseded by D004.
+Run the full replay → train → reload → rollout → video loop on robomimic Lift
+(proficient-human, low-dim) first. Lift is short and reliably learnable, so failures
+isolate environment/rendering/Slurm problems rather than task difficulty. Use the same
+pins as the main task so the environment carries over unchanged. Lift results
+are a pipeline check, not portfolio results.
 
-**Context.** The primary learning goal is understanding and comparing ACT and Diffusion Policy. CLAIX has shared storage, CPU nodes and H100s. The original Isaac Sim path requires an additional supported RTX host to evaluate checkpoints and render videos.
+## D5 · Two learning tracks (2026-11-15)
 
-**Convention and options.** Use a published simulator/dataset pair. The original Isaac Lab and Isaac Sim workflow follows NVIDIA's tutorial and offers RTX rendering. The robosuite and MuJoCo workflow follows the published MimicGen benchmark and supports CPU software rendering. It requires a validated environment pin and a shared HDF5-to-LeRobot conversion.
+- **Track A, reproduction:** upstream scripts, configs and Slurm jobs produce all
+  reported numbers.
+- **Track B, understanding:** small from-scratch implementations (diffusion policy,
+  action chunking) in notebooks or `src/`, trained on the same low-dim data and compared
+  against Track A. They exist to explain mechanisms; they never replace upstream
+  results in headline tables unless evaluated under the frozen protocol.
 
-**Decision.** Adopt robosuite and MuJoCo with public MimicGen `stack_three_d0`. This supersedes the simulator choice in D001. Keep separate simulator and training environments on CLAIX. Preserve D002's benchmark freeze and apply it to both policies. BC-RNN is an optional reference. Require ACT and Diffusion Policy for M8 and M9. Keep GitHub issue identities and update native dependencies in place.
+## Open question · ACT implementation (phase 2)
 
-**Validation.** First demonstrate action playback, stack success and MP4 output on a CLAIX CPU node. Then verify that the adapter preserves camera timing, action semantics and episode resets before committing to full training.
-
-## D004 · Baseline-first learning and upstream reuse
-
-**Decision (2026-11-14).** Follow three phases: reproduce an end-to-end BC-RNN baseline,
-compare ACT/Diffusion, then run controlled improvements and package results. This
-supersedes D003's optional BC-RNN status and exercise-first milestone ordering; retain
-its fixed MuJoCo/MimicGen task and independent training/simulation environments.
-Gymnasium and FK/IK are optional supporting lessons. D002's held-out benchmark freeze
-still applies before headline method comparisons, after baseline development rollouts.
-
-Use upstream configuration generation, training and checkpoint rollout. Own notebooks,
-settings, Slurm integration and evidence; add adapters only when needed. One notebook
-per purpose, connected through persisted artifacts. No speculative custom trainer,
-evaluator or package skeleton. External checkouts retain pinned original code.
-
-**Status.** Repository guidance reorganized. Baseline installation/execution remains pending. Issues, milestones and native
-dependencies have been synchronized; Project custom layout/ordering awaits access.
-Documentation is not runtime evidence.
+robomimic v0.5 provides BC-RNN and `DiffusionPolicyUNet`; no robomimic version has ACT.
+Options before phase 2: LeRobot ACT with a dataset conversion, or a Track B
+implementation evaluated under the frozen protocol.
