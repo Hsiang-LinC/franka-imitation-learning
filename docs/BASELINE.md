@@ -13,7 +13,7 @@ for Square. They differ only in robosuite and MuJoCo.
 | MuJoCo | `sim`: `mujoco==3.9.0`; `sim-square`: `mujoco==3.2.7` | Highest replay success per dataset (table below). robosuite master caps `<3.10`: 3.10 changed `mj_fullM` and breaks its controllers; the v1.5.x releases lack the cap |
 | robomimic | master `d309eaecc18acf4152a830a895a6984b8ac71b05` (2026-08-09) | v0.5.0 + 15 fixes, incl. the current dataset HF repo; has `DiffusionPolicyUNet` |
 | PyTorch | sim env `torch==2.15.0+cpu`; trainer env `torch==2.15.0` (PyPI CUDA 13.2 build, H100 driver unverified) | Checkpoints must load across envs |
-| Lift data | HF `robomimic/robomimic_datasets` `v1.5/lift/ph/demo_v15.hdf5` (sha256 `68f2a8cf…f37`), `low_dim_v15.hdf5` (`2067777c…aeb540`) | Hugging Face LFS hashes, to verify after download |
+| Data | HF `robomimic/robomimic_datasets` `v1.5/{task}/ph/`, revision `74fa018461f479cd9fd15b924a16103012096203`. sha256 `demo_v15.hdf5` / `low_dim_v15.hdf5`: Lift `68f2a8cf…f37` / `2067777c…aeb540`; Can `86961df8…6d73d` / `3f2eb92e…282962`; Square `3d9d6cad…e61e596` / `45d8cabb…14951` | Local files match the Hugging Face LFS hashes (verified 2026-11-21) |
 | Rendering | `Mesa/24.1.3` module, `MUJOCO_GL=osmesa` (verified in a CPU job) | No system libOSMesa on CLAIX |
 
 ### Replay success per MuJoCo version (ph `low_dim_v15.hdf5`, 200 demos each)
