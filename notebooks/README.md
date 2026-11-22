@@ -24,10 +24,11 @@ Numbered in reading order; one purpose per notebook.
 
 ## Videos
 
-Full rollout and replay MP4s stay in run storage (`$HPCWORK/franka-il/runs/...`). A script
-picks representative episodes (a typical success, one per failure mode) and converts them to
-short low-resolution GIF/WebP clips (about 200 KB each) in `docs/media/`. Notebooks embed
-them in **markdown** cells (`![square: jams on peg](../docs/media/square_jam.gif)`), which
+Full rollout and replay MP4s stay in run storage (`$HPCWORK/franka-il/runs/...`).
+`jobs/make_clips.py` cuts representative episodes (a typical success, one per failure mode)
+into small animated WebP clips (160 px, about 100–300 KB; GIF would be ~10× larger) in
+`docs/media/`. Notebooks embed them in **markdown** cells
+(`![square: jams on peg](../docs/media/square_jam.webp)`), which
 GitHub, VS Code and Colab all render without growing the notebook. `IPython.display.Video`
 on a run-storage path is for local review only; clear such outputs before committing.
 
