@@ -171,6 +171,13 @@ c23ms), seed 1 = report (job 5950799).
   50 episode records of 5949705): the can slips or is released short of the target
   compartment during transport and is never re-grasped; the arm hovers over the target
   until the horizon. Episodes 4, 13 and 36 account for 12 of 25 plateau failures.
+- Cross-checks (notebook 02, section 4b): all 200 recorded demos succeed and none contains a
+  drop or re-grasp, so the data has no failure and no recovery example. The 6 demos failing
+  action replay on 3.9.0 (job 5952983, filmed recorded vs replayed) diverge only at the
+  release above the bin (landing physics), not in transport, and none of them is among the
+  5 nearest demos of episodes 4, 13 or 36. Hard starts have demos as close
+  as easy ones (`results/can_eval_init_states.csv`, rebuilt by `jobs/eval_init_states.py`);
+  7 of 9 lie near the y limits of the start region (exploratory, threshold chosen post hoc).
 - Analysis: `notebooks/02_bc_rnn_baseline.ipynb` from `results/can_eval_episodes.csv`
   (`jobs/collect_eval.py`); clips in `docs/media/can_*.gif` (`jobs/make_clips.py`) →
   ![success vs epoch](figures/can_eval_success.png)

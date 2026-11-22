@@ -12,6 +12,9 @@ Pass:   every demo succeeds. Divergence and first-success timing are reported fo
 Usage:
     python jobs/replay_check.py --dataset <low_dim_v15.hdf5> --out <report.json>
     python jobs/replay_check.py ... --limit 5      # quick smoke test
+    python jobs/replay_check.py ... --demos demo_11 demo_52 --video_dir <dir>
+        # chosen demos only; one MP4 each, recorded (left) vs replayed (right), and the step
+        # where the replayed object first drifts from the recorded one
 """
 
 from __future__ import annotations
@@ -35,6 +38,8 @@ class DemoResult:
     first_success_replay: int | None    # step index i such that success holds after actions[i]
     first_success_recorded: int | None  # same, from the recorded rewards
     max_divergence: float               # max_i ||replayed state - recorded state|| (qpos+qvel)
+    object_drift_step: int | None = None  # first step the replayed object is >2 cm from the recorded one
+    object_final_gap: float | None = None # replayed vs recorded object position at the last step [m]
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,6 +47,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--dataset", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--limit", type=int, default=None, help="replay only the first N demos")
+    p.add_argument("--demos", nargs="+", default=None, help="replay only these demos (e.g. demo_11)")
+    p.add_argument("--video_dir", type=Path, default=None,
+                   help="write <demo>.mp4: recorded (left) vs replayed (right), agentview")
     return p.parse_args()
 
 
@@ -49,7 +57,7 @@ def sorted_demo_names(f: h5py.File) -> list[str]:
     return sorted(f["data"].keys(), key=lambda name: int(name.split("_")[1]))
 
 
-def make_env(env_meta: dict):
+def make_env(env_meta: dict, render_offscreen: bool = False):
     """Build the simulator exactly as the dataset was recorded (env_meta = data.attrs['env_args'])."""
     # Imported here so `--help` works without loading the simulator.
     import robomimic.utils.env_utils as EnvUtils
@@ -58,7 +66,7 @@ def make_env(env_meta: dict):
     # robomimic must know each obs key's modality before building an env; obs are unused here.
     ObsUtils.initialize_obs_modality_mapping_from_dict({"low_dim": ["robot0_eef_pos"]})
     return EnvUtils.create_env_from_metadata(
-        env_meta=env_meta, render=False, render_offscreen=False, use_image_obs=False
+        env_meta=env_meta, render=False, render_offscreen=render_offscreen, use_image_obs=False
     )
 
 
@@ -77,7 +85,22 @@ def recorded_first_success(rewards: np.ndarray) -> int | None:
     return first_true(rewards >= 1.0)
 
 
-def replay_demo(env, demo: h5py.Group) -> DemoResult:
+# Free joint of the task object (Can's scene also holds parked Milk, Bread and Cereal).
+TASK_OBJECT_JOINT = {"Lift": "cube_joint0", "PickPlaceCan": "Can_joint0",
+                     "NutAssemblySquare": "SquareNut_joint0"}
+
+
+def object_pos(env) -> np.ndarray:
+    sim = env.env.sim   # looked up each time: a hard reset rebuilds the sim
+    start, _ = sim.model.get_joint_qpos_addr(TASK_OBJECT_JOINT[env.name])
+    return sim.data.qpos[start:start + 3].copy()
+
+
+def frame(env) -> np.ndarray:
+    return env.render(mode="rgb_array", height=256, width=256, camera_name="agentview")
+
+
+def replay_demo(env, demo: h5py.Group, rec_env=None, writer=None) -> DemoResult:
     states = demo["states"][()]    # (T, 32): recorded simulator snapshots, states[i] is BEFORE actions[i]
     actions = demo["actions"][()]  # (T, 7)
     rewards = demo["rewards"][()]  # (T,)
@@ -88,10 +111,19 @@ def replay_demo(env, demo: h5py.Group) -> DemoResult:
     # env.reset() is redundant; kept because this is the code that ran job 5813465.
     env.reset()
     env.reset_to({"states": states[0], "model": demo.attrs["model_file"]})
+    if rec_env is not None:   # second env that only shows recorded states (no physics stepping)
+        rec_env.reset()
+        rec_env.reset_to({"states": states[0], "model": demo.attrs["model_file"]})
 
     successes = np.zeros(T, dtype=bool)
     divergence = np.zeros(T - 1)
+    gap = np.zeros(T)
     for i in range(T):
+        if rec_env is not None:
+            rec_env.reset_to({"states": states[i]})
+            gap[i] = np.linalg.norm(object_pos(env) - object_pos(rec_env))
+            if writer is not None:
+                writer.append_data(np.concatenate([frame(rec_env), frame(env)], axis=1))
         # Open loop: replay the human's command (25 OSC/MuJoCo substeps), ask the task
         # evaluator (not the reward), and measure drift from the recorded next state.
         # Note: drift is dominated by qvel spikes at contact, not by qpos.
@@ -107,6 +139,8 @@ def replay_demo(env, demo: h5py.Group) -> DemoResult:
         first_success_replay=first_true(successes),
         first_success_recorded=recorded_first_success(rewards),
         max_divergence=float(divergence.max()) if divergence.size else 0.0,
+        object_drift_step=first_true(gap > 0.02) if rec_env is not None else None,
+        object_final_gap=float(gap[-1]) if rec_env is not None else None,
     )
 
 
@@ -141,15 +175,27 @@ def main() -> int:
     t0 = time.time()
     with h5py.File(args.dataset, "r") as f:
         env_meta = json.loads(f["data"].attrs["env_args"])
-        env = make_env(env_meta)
-        names = sorted_demo_names(f)[: args.limit]
+        video = args.video_dir is not None
+        env = make_env(env_meta, render_offscreen=video)
+        rec_env = make_env(env_meta, render_offscreen=video) if args.demos else None
+        names = args.demos or sorted_demo_names(f)[: args.limit]
         results = []
         for k, name in enumerate(names):
-            r = replay_demo(env, f[f"data/{name}"])
+            writer = None
+            if video:
+                import imageio
+                args.video_dir.mkdir(parents=True, exist_ok=True)
+                writer = imageio.get_writer(str(args.video_dir / f"{name}.mp4"), fps=20)
+            r = replay_demo(env, f[f"data/{name}"], rec_env, writer)
+            if writer is not None:
+                writer.close()
             results.append(r)
             print(f"[{k + 1}/{len(names)}] {name}: success={r.success} "
                   f"step {r.first_success_replay} vs recorded {r.first_success_recorded}, "
-                  f"max div {r.max_divergence:.1e}", flush=True)
+                  f"max div {r.max_divergence:.1e}"
+                  + (f", object drifts >2 cm at step {r.object_drift_step}, final gap "
+                     f"{r.object_final_gap:.3f} m" if r.object_final_gap is not None else ""),
+                  flush=True)
 
     report = {
         "dataset": args.dataset.name,  # file name only: the report may be pasted into public issues
