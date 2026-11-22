@@ -1,0 +1,95 @@
+{
+ "dataset": "robomimic v0.5 ph low_dim_v15 (HF revision 74fa0184)",
+ "tasks": {
+  "can": {
+   "file": "robomimic_v15/can/ph/low_dim_v15.hdf5",
+   "sha256": "3f2eb92e0a5025d0095e866ac16cc8092d6a762abe27dec90dbaff9027282962",
+   "env_name": "PickPlaceCan",
+   "n_demos": 200,
+   "n_samples": 23207,
+   "length_median_max": [
+    115,
+    151
+   ],
+   "masks": {
+    "20_percent": {
+     "n": 40,
+     "sha1": "4663d061a34b"
+    },
+    "20_percent_train": {
+     "n": 36,
+     "sha1": "647891293e2f"
+    },
+    "20_percent_valid": {
+     "n": 4,
+     "sha1": "261e98be42f0"
+    },
+    "50_percent": {
+     "n": 100,
+     "sha1": "8997bd9869bc"
+    },
+    "50_percent_train": {
+     "n": 90,
+     "sha1": "ddccdc91785d"
+    },
+    "50_percent_valid": {
+     "n": 10,
+     "sha1": "7aec4b371a39"
+    },
+    "train": {
+     "n": 180,
+     "sha1": "5863aa88d03b"
+    },
+    "valid": {
+     "n": 20,
+     "sha1": "488287c410e7"
+    }
+   }
+  },
+  "square": {
+   "file": "robomimic_v15/square/ph/low_dim_v15.hdf5",
+   "sha256": "45d8cabb6d57a4c03e839aa5e4b3e58fb60fe8bd20e1951fec563a2abfd14951",
+   "env_name": "NutAssemblySquare",
+   "n_demos": 200,
+   "n_samples": 30154,
+   "length_median_max": [
+    150,
+    236
+   ],
+   "masks": {
+    "20_percent": {
+     "n": 40,
+     "sha1": "4663d061a34b"
+    },
+    "20_percent_train": {
+     "n": 36,
+     "sha1": "647891293e2f"
+    },
+    "20_percent_valid": {
+     "n": 4,
+     "sha1": "261e98be42f0"
+    },
+    "50_percent": {
+     "n": 100,
+     "sha1": "8997bd9869bc"
+    },
+    "50_percent_train": {
+     "n": 90,
+     "sha1": "ddccdc91785d"
+    },
+    "50_percent_valid": {
+     "n": 10,
+     "sha1": "7aec4b371a39"
+    },
+    "train": {
+     "n": 180,
+     "sha1": "5863aa88d03b"
+    },
+    "valid": {
+     "n": 20,
+     "sha1": "488287c410e7"
+    }
+   }
+  }
+ }
+}
