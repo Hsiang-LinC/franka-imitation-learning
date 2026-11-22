@@ -1,10 +1,10 @@
-"""Cut one episode out of an eval MP4 into a small animated WebP for docs/media/ (notebooks/README.md).
+"""Cut one episode out of an eval MP4 into a small GIF for docs/media/ (notebooks/README.md).
 
 An eval MP4 holds the filmed episodes back to back, one frame per environment step, so the
 episode boundaries follow from the steps recorded in eval.json.
 Usage (sim venv, which has imageio + ffmpeg):
-    python jobs/make_clips.py EVAL_DIR CHECKPOINT_STEM EPISODE OUT.webp [--speed 2] [--size 160]
-    e.g. ... $HPCWORK/franka-il/runs/can_eval/5950806 model_epoch_1300_ep4-36 36 docs/media/can_fail_ep36.webp
+    python jobs/make_clips.py EVAL_DIR CHECKPOINT_STEM EPISODE OUT.gif [--speed 4] [--size 200]
+    e.g. ... $HPCWORK/franka-il/runs/can_eval/5950806 model_epoch_1300_ep4-36 36 docs/media/can_fail_ep36.gif
 """
 import argparse
 import json
@@ -19,8 +19,9 @@ p.add_argument("eval_dir", type=Path)
 p.add_argument("video_stem", help="MP4 name without extension, e.g. model_epoch_2000")
 p.add_argument("episode", type=int)
 p.add_argument("out", type=Path)
-p.add_argument("--speed", type=int, default=2, help="keep every n-th frame (played at 10 fps x n)")
-p.add_argument("--size", type=int, default=160)
+p.add_argument("--speed", type=int, default=4, help="keep every n-th frame (played at 10 fps x n)")
+p.add_argument("--size", type=int, default=200)
+p.add_argument("--colors", type=int, default=48)
 args = p.parse_args()
 
 report = json.loads((args.eval_dir / "eval.json").read_text())
@@ -35,9 +36,12 @@ stop = start + steps[args.episode]
 reader = imageio.get_reader(str(args.eval_dir / "videos" / f"{args.video_stem}.mp4"))
 frames = [Image.fromarray(f).resize((args.size, args.size), Image.BILINEAR)
           for i, f in enumerate(reader) if start <= i < stop and (i - start) % args.speed == 0]
+# One shared palette (from a mid-episode frame), no dithering: keeps the GIF small and stable.
+palette = frames[len(frames) // 2].quantize(colors=args.colors, method=Image.Quantize.MEDIANCUT)
+frames = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in frames]
 args.out.parent.mkdir(parents=True, exist_ok=True)
 frames[0].save(args.out, save_all=True, append_images=frames[1:], duration=100, loop=0,
-               quality=70)   # 10 fps, loops forever
+               optimize=True)   # 10 fps, loops forever
 ep = next(e for e in result["episodes"] if e["episode"] == args.episode)
 print(f"{args.out}: episode {args.episode}, {'success' if ep['success'] else 'failure'} "
       f"after {ep['steps']} steps, {len(frames)} frames, {args.out.stat().st_size // 1024} KB")

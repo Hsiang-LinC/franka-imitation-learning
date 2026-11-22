@@ -26,9 +26,10 @@ Numbered in reading order; one purpose per notebook.
 
 Full rollout and replay MP4s stay in run storage (`$HPCWORK/franka-il/runs/...`).
 `jobs/make_clips.py` cuts representative episodes (a typical success, one per failure mode)
-into small animated WebP clips (160 px, about 100–300 KB; GIF would be ~10× larger) in
-`docs/media/`. Notebooks embed them in **markdown** cells
-(`![square: jams on peg](../docs/media/square_jam.webp)`), which
+into small GIFs (200 px, 48 colours, 2× speed, about 100–300 KB) in `docs/media/`.
+GIF, not WebP: the VS Code notebook renderer on the remote host shows WebP only as a broken
+icon. Notebooks embed clips in **markdown** cells
+(`![square: jams on peg](../docs/media/square_jam.gif)`), which
 GitHub, VS Code and Colab all render without growing the notebook. `IPython.display.Video`
 on a run-storage path is for local review only; clear such outputs before committing.
 

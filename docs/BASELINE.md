@@ -172,7 +172,7 @@ c23ms), seed 1 = report (job 5950799).
   compartment during transport and is never re-grasped; the arm hovers over the target
   until the horizon. Episodes 4, 13 and 36 account for 12 of 25 plateau failures.
 - Analysis: `notebooks/02_bc_rnn_baseline.ipynb` from `results/can_eval_episodes.csv`
-  (`jobs/collect_eval.py`); clips in `docs/media/can_*.webp` (`jobs/make_clips.py`) →
+  (`jobs/collect_eval.py`); clips in `docs/media/can_*.gif` (`jobs/make_clips.py`) →
   ![success vs epoch](figures/can_eval_success.png)
   ![paired outcomes](figures/can_eval_paired.png)
 
