@@ -109,11 +109,21 @@ removed W&B). Track B is paused until after phase 2.
 
 ## D10 · Hugging Face Hub is the artifact hub (2026-11-25)
 
-Converted datasets and final checkpoints live in private Hugging Face Hub repos, versioned
-by revision and SHA256. This follows the LeRobot convention (`repo_id` + revision), and
-both CLAIX and cloud jobs read and write the same place. CLAIX `$HPCWORK` caches data and
-holds rollouts and videos. A cloud bucket holds only in-run Spot checkpoints and is cleared
-after each run. Repos go public only after the dataset and model licenses are verified.
+Every artifact has exactly one home:
+
+| Artifact | Home |
+|---|---|
+| Upstream raw datasets | `robomimic/robomimic_datasets` on the Hub, pinned revision + SHA256 (unchanged, read-only) |
+| Derived datasets (rendered images, LeRobotDataset conversion) | Own private Hub dataset repo |
+| Checkpoints behind a reported result, from any trainer (incl. CLAIX BC-RNN) | Own private Hub model repo |
+| Intermediate training checkpoints | Cloud bucket during the run (cleared after), or CLAIX `$HPCWORK` |
+| Rollout videos and episode logs | CLAIX `$HPCWORK`; selected clips as release assets (D12) |
+| Code, configs, split/budget manifests, checksums | Git |
+| Run evidence | The relevant GitHub issue |
+
+This follows the LeRobot convention (`repo_id` + revision). CLAIX and cloud jobs read and
+write the same place. Demonstration budgets are episode lists in a manifest, not dataset
+copies. Repos go public only after the dataset and model licenses are verified.
 
 ## D11 · Cloud GPU: GCP Vertex AI Spot with a spend cap (2026-11-25)
 
