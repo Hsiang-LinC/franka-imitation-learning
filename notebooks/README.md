@@ -17,10 +17,10 @@ Numbered in reading order; one purpose per notebook.
 | 00b_lift_eval_analysis | A | `results/lift_eval_episodes.csv` → success and paired-outcome figures |
 | 01_can_square_data | A | Can and Square ph datasets → object/action/length inspection, `results/data_manifest.json` |
 | 02_bc_rnn_baseline | A | Can and Square paired eval results → checkpoint selection, report-seed success, failure clips |
-| Minimal diffusion policy | B | Low-dim Lift data → own DP, compared with upstream |
-| Minimal action chunking (ACT-style) | B | Same data → own chunking policy, compared with upstream |
+| Minimal diffusion policy (paused, D9) | B | Low-dim Lift data → own DP, compared with upstream |
+| Minimal action chunking (ACT-style, paused) | B | Same data → own chunking policy, compared with upstream |
 | Later: method comparison, sweeps | A | Frozen evaluator results → figures |
-| 99_summary | – | Results of all chapters → portfolio overview |
+| 99_summary | – | Results of all chapters → portfolio overview (rendered to the project page, D12) |
 
 ## Videos
 
@@ -33,13 +33,12 @@ icon. Notebooks embed clips in **markdown** cells
 GitHub, VS Code and Colab all render without growing the notebook. `IPython.display.Video`
 on a run-storage path is for local review only; clear such outputs before committing.
 
-## GPU hosts (Colab, rented GPUs)
+## GPU hosts
 
-`colab/` holds launcher notebooks only: clone the repository at a recorded commit, install
-from `requirements/*.txt`, mount persistent storage (Drive) for data and checkpoints so a
-disconnected session can resume, run the same `jobs/` scripts, and copy the small result
-files back into `results/`. Analysis chapters stay unchanged whatever host produced the
-results.
+GPU training runs as containerised Vertex AI jobs (DECISIONS D9, D11), never from a
+notebook. Colab is not used (quota insufficient). Jobs read the dataset from the Hub by
+revision, and selected checkpoints go to the Hub (D10). Small result files are copied
+into `results/`. Analysis chapters stay unchanged whatever host produced the results.
 
 ## Shared code
 
