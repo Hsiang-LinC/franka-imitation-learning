@@ -23,6 +23,8 @@ Optional: M1 Gymnasium #3–4, M2 FK/IK #5–7. Stretch after the portfolio: LIB
 2. Square: inspect observations/actions; freeze episode splits. (Can training skipped.)
    Steps 2–5 were run on CLAIX (2000-epoch training; failure analysis in progress);
    evidence is not yet pushed, so they stay open here.
+   Optional check: do policy failures cluster where replay fails (peg jam)? If so, train
+   on the 181 replay-consistent demos vs all 200 and compare on the same reset seeds.
 3. Build the BC-RNN low-dim config from robomimic's templates; smoke run; reload check.
 4. Full BC-RNN training on CLAIX CPU; evaluate saved checkpoints in `sim-square`.
 5. Record successes/trials with Wilson intervals, failure examples, videos and
@@ -30,10 +32,15 @@ Optional: M1 Gymnasium #3–4, M2 FK/IK #5–7. Stretch after the portfolio: LIB
 
 ## Phases 2–3 order
 
-6. Container image (D9); acceptance: Square replay 181/200 inside it.
-7. robomimic → LeRobotDataset conversion (images, lossless) pushed to the Hub (D10),
-   with the protocol's alignment, round-trip and pairing tests; robosuite evaluation
-   adapter for LeRobot policies.
+Rough schedule: steps 2–5 about one week; 6–8 about two; 9 about two; 10 two to three;
+11 about one. Re-plan after the step-8 pilot.
+
+6. Container image (D9), built by GitHub Actions; acceptance: Square replay 181/200 inside it.
+7. Render 84×84 images from Square states (the Hub has no Square image file), convert to
+   LeRobotDataset (images, lossless) and push to the Hub (D10). Tests: alignment,
+   round-trip and pairing per the protocol. Open: normalization stats per budget from
+   training episodes only (check LeRobot support; else one dataset revision per budget).
+   Robosuite evaluation adapter for LeRobot policies.
 8. Cloud setup (D11): sign up, quota, budget kill-switch; Lift image pilot that
    resumes after preemption; measure cost per training step and size the sweeps.
 9. Freeze the benchmark (#14); train ACT and DP on Square RGB + proprioception,
@@ -42,7 +49,9 @@ Optional: M1 Gymnasium #3–4, M2 FK/IK #5–7. Stretch after the portfolio: LIB
     with inference latency; execution-horizon sweep.
 11. Project page and README (D12).
 
-Track B (D5) is paused until after phase 2.
+Track B (D5) is paused until after phase 2. Layout added only as steps need it:
+`containers/`, `pyproject.toml` + `src/franka_il/` (conversion, rollout adapter),
+`tests/`, `cloud/` (Vertex job specs, billing kill-switch).
 
 A short training run proves integration, not task competence. The Lift warm-up has no
 dedicated legacy issue yet.

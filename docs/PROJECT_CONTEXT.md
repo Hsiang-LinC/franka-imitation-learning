@@ -1,24 +1,32 @@
 # Session handoff
 
-## Current state (2026-11-21)
+## Current state (2026-11-25)
 
 - Phase 1, step 0: **Lift warm-up** (D4) on route B. Sim venv installed and pins
   validated by full Lift ph replay (docs/BASELINE.md). Dataset inspection notebook
   `notebooks/00_lift_warmup.ipynb` done (covers most of 0.2).
 - 0.3 done: trainer venv + 200-epoch BC-RNN low-dim Lift run on CPU (jobs 5824723/5824724,
-  checkpoints every 20 epochs). Compute decision: low-dim training on CPU, H100 for images (D1).
+  checkpoints every 20 epochs). Compute: low-dim on CLAIX CPU, image/VLA on cloud GPUs (D1).
 - 0.4 done: paired rollout evaluation of all 10 checkpoints (seed 0, selection) and the
   selected epoch 200 on fresh seed 1: 49/50 (state-based; docs/BASELINE.md).
   Failure review done: missed grasps are never recovered (ph demos contain no recovery).
 - Phase 1 step 1 (Can/Square replay): per-dataset simulator pins chosen by a MuJoCo
   version sweep (D6): Lift/Can on `sim` (MuJoCo 3.9.0), Square on `sim-square` (3.2.7).
   Square replays 181/200 at best; evidence in docs/BASELINE.md.
+- Square steps 2–5 ran on CLAIX (2000-epoch BC-RNN low-dim; failure analysis in progress).
+  That work sits on an unpushed CLAIX branch; CLAIX was in maintenance on 2026-11-25.
+  Next: commit it there, rebase onto main after PR #27, push, open a PR, record evidence
+  in #15. Then roadmap step 6 (container).
+- Phases 2–3 planned 2026-11-25 (PR #27): LeRobot + container (D9), Hub artifacts (D10),
+  GCP Vertex Spot with €50 cap (D11), project page (D12), VLA arms on Square (D8).
 - GPU: account `default` reaches `c23g`. The IT Center (2026-06) states a default of 10 GPU-h/month;
   the repo previously recorded 3 (unverified which applies). Image/VLA training moves to cloud (D11).
 - CLAIX account remains valid for about one more year (user, 2026-11-25).
 - Teaching mode: Claude writes a tested skeleton; the user fills TODOs at learning points.
-- Two learning tracks agreed (D5). ACT implementation is open for phase 2.
-- Lift warm-up is issue #23. Legacy issues #8–#21 still name MimicGen/stack_three.
+  The user runs CLAIX jobs and approves every cloud provisioning step.
+- Two learning tracks agreed (D5); Track B paused until after phase 2. ACT comes from LeRobot (D9).
+- Lift warm-up is issue #23. Legacy issues #8–#21 still name MimicGen/stack_three;
+  #22 still reads "optional stretch" (now D8, phase 3).
 
 ## Environment facts
 

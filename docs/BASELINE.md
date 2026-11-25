@@ -164,10 +164,26 @@ before installing robomimic. On nodes without a GPU, `get_available_devices()` r
 ## Handoff
 
 ```text
-dataset + sim pins -> replay MP4 + inspection -> split -> config
-  -> CPU (low-dim) / H100 (image) training -> run ID + checkpoint + checksum
-  -> CPU rollout -> per-episode metrics + videos -> analysis notebook
+Hub raw data -> CLAIX CPU: replay check, render images, convert -> Hub dataset (private)
+  -> training: CLAIX CPU (BC-RNN low-dim) | Vertex Spot L4 (ACT, DP, SmolVLA; GCS in-run ckpts)
+  -> CLAIX CPU (Apptainer): checkpoint selection, frozen evaluation
+  -> selected checkpoint -> Hub model repo; episode logs + videos -> $HPCWORK
+  -> analysis notebooks -> project page (D12); run evidence -> issue
 ```
+
+| Stage | Where | Output and home (D10) | Acceptance |
+|---|---|---|---|
+| Replay check | CLAIX CPU, `sim-square` venv | Per-demo outcomes; BASELINE | 181/200 (done) |
+| Inspect, split | Notebook | Train/val episode lists, nested budget subsets; Git manifest | No demo in two splits |
+| Render images | CLAIX CPU, `sim-square`, `dataset_states_to_obs` | 84×84 agentview + wrist hdf5; `$HPCWORK`, SHA256 in Git | Low-dim obs match source; spot-checked frames |
+| Convert | CLAIX CPU, container | LeRobotDataset v3; Hub, revision in Git | Alignment tests; converted-action replay 181/200 with the same failing demos |
+| Train | CLAIX CPU (robomimic) or Vertex (container) | Checkpoints; `$HPCWORK` or GCS | Resumes after preemption |
+| Select | CLAIX CPU, container | Chosen checkpoint to Hub with model card (run ID, commit, image digest, dataset revision, seed) | Selection seeds only |
+| Evaluate | CLAIX CPU, container | Episode logs, videos; `$HPCWORK` | Report seeds once; Wilson CI, McNemar |
+| Analyse | Notebook on Mac | Figures, failure taxonomy, clips | Each failure type has a clip |
+
+Run IDs name task, method, budget and seed (e.g. `sq-dp-b50-s0`). Training reads only
+committed configs plus CLI overrides.
 
 Each step reads persisted inputs. Data, checkpoints, logs and videos live in shared
 storage outside Git; commit sanitized configs and summaries without absolute private paths.

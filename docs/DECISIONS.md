@@ -101,7 +101,8 @@ LeRobot needs Python ≥3.12, so it cannot share the 3.11 venvs. One container i
 (LeRobot + robosuite 1.5.1 + MuJoCo 3.2.7 + OSMesa) does conversion, cloud training
 (Docker) and CLAIX evaluation (Apptainer). This deviates from the venv convention because
 the same image must run on both sides. Acceptance: Square ph replay reproduces 181/200
-inside the container (D6). The existing venvs stay for robomimic work.
+inside the container (D6). GitHub Actions builds the image once and pushes the same digest
+to ghcr.io (CLAIX pulls it) and to Artifact Registry (Vertex documents only that source). The existing venvs stay for robomimic work.
 
 Phase 2 uses each method's recommended hyperparameters. The chunk length is studied in
 the phase-3 execution-horizon sweep. Tracking uses LeRobot's built-in Trackio (v0.7.0
