@@ -1,0 +1,10 @@
+# Input for requirements/lerobot.txt (container image, DECISIONS D9). Regenerate the lock with the
+# command in the lock file's header; never edit the lock by hand.
+# LeRobot v0.7.0 = tag commit 410c095eacc0011d998a73383eb94abed2715af0 (released 2026-11-05).
+lerobot[training,dataset,smolvla,diffusion,peft]==0.7.0
+# Square simulator pin (D6): robosuite 1.5.1 (tag commit 51cc017) + MuJoCo 3.2.7.
+robosuite==1.5.1
+mujoco==3.2.7
+# Dataset conversion and rollout video.
+h5py
+imageio[ffmpeg]
