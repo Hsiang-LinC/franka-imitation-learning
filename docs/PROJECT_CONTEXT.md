@@ -13,7 +13,9 @@
 - Phase 1 step 1 (Can/Square replay): per-dataset simulator pins chosen by a MuJoCo
   version sweep (D6): Lift/Can on `sim` (MuJoCo 3.9.0), Square on `sim-square` (3.2.7).
   Square replays 181/200 at best; evidence in docs/BASELINE.md.
-- GPU: account `default` reaches `c23g`, but the student quota is 3 GPU-h/month.
+- GPU: account `default` reaches `c23g`. The IT Center (2026-06) states a default of 10 GPU-h/month;
+  the repo previously recorded 3 (unverified which applies). Image/VLA training moves to cloud (D11).
+- CLAIX account remains valid for about one more year (user, 2026-11-25).
 - Teaching mode: Claude writes a tested skeleton; the user fills TODOs at learning points.
 - Two learning tracks agreed (D5). ACT implementation is open for phase 2.
 - Lift warm-up is issue #23. Legacy issues #8–#21 still name MimicGen/stack_three.
