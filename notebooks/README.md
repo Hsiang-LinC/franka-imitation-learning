@@ -11,8 +11,8 @@ earlier notebooks. Keep outputs small and free of private paths.
 | 00b_lift_eval_analysis | A | `results/lift_eval_episodes.csv` → success and paired-outcome figures |
 | 01_square_data | A | Square ph/mh datasets → obs/action inspection, frozen split |
 | 02_bc_rnn_baseline | A | Run ID, checkpoint, rollout metrics → baseline analysis and videos |
-| Minimal diffusion policy | B | Low-dim Lift data → own DP, compared with upstream |
-| Minimal action chunking (ACT-style) | B | Same data → own chunking policy, compared with upstream |
+| Minimal diffusion policy (paused, D9) | B | Low-dim Lift data → own DP, compared with upstream |
+| Minimal action chunking (ACT-style, paused) | B | Same data → own chunking policy, compared with upstream |
 | Later: method comparison, sweeps, report | A | Frozen evaluator results → figures and write-up |
 
 Track B code can graduate into `src/` once a notebook outgrows it or a job needs it.
