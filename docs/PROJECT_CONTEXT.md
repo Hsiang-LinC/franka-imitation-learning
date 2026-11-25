@@ -13,10 +13,11 @@
 - Phase 1 step 1 (Can/Square replay): per-dataset simulator pins chosen by a MuJoCo
   version sweep (D6): Lift/Can on `sim` (MuJoCo 3.9.0), Square on `sim-square` (3.2.7).
   Square replays 181/200 at best; evidence in docs/BASELINE.md.
-- Square steps 2–5 ran on CLAIX (2000-epoch BC-RNN low-dim; failure analysis in progress).
-  That work sits on an unpushed CLAIX branch; CLAIX was in maintenance on 2026-11-25.
-  Next: commit it there, rebase onto main after PR #27, push, open a PR, record evidence
-  in #15. Then roadmap step 6 (container).
+- PR #26 (`phase1/can-bc-rnn`): task-generic BC-RNN jobs, Can/Square data notebook,
+  Can BC-RNN 2000 epochs (job 5929929) with evaluation and failure cross-check. main was
+  merged into it on 2026-11-25 (no history rewrite). Further work sat unpushed on CLAIX,
+  which was in maintenance on 2026-11-25. Next: on CLAIX `git pull` that branch, then
+  push the rest, finish Square BC-RNN, record evidence in #12/#15.
 - Phases 2–3 planned 2026-11-25 (PR #27): LeRobot + container (D9), Hub artifacts (D10),
   GCP Vertex Spot with €50 cap (D11), project page (D12), VLA arms on Square (D8).
 - GPU: account `default` reaches `c23g`. The IT Center (2026-06) states a default of 10 GPU-h/month;
