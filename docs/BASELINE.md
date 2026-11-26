@@ -176,7 +176,7 @@ Hub raw data -> CLAIX CPU: replay check, render images, convert -> Hub dataset (
 | Replay check | CLAIX CPU, `sim-square` venv | Per-demo outcomes; BASELINE | 181/200 (done) |
 | Inspect, split | Notebook | Train/val episode lists, nested budget subsets; Git manifest | No demo in two splits |
 | Render images | CLAIX CPU, `sim-square`, `dataset_states_to_obs` | 84×84 agentview + wrist hdf5; `$HPCWORK`, SHA256 in Git | Low-dim obs match source; spot-checked frames |
-| Convert | CLAIX CPU, container | LeRobotDataset v3; Hub, revision in Git | Alignment tests; converted-action replay 181/200 with the same failing demos |
+| Convert | CLAIX CPU, container | LeRobotDataset v3; Hub, revision in Git | Alignment tests; converted-action replay gives the same per-demo outcomes as the container replay |
 | Train | CLAIX CPU (robomimic) or Vertex (container) | Checkpoints; `$HPCWORK` or GCS | Resumes after preemption |
 | Select | CLAIX CPU, container | Chosen checkpoint to Hub with model card (run ID, commit, image digest, dataset revision, seed) | Selection seeds only |
 | Evaluate | CLAIX CPU, container | Episode logs, videos; `$HPCWORK` | Report seeds once; Wilson CI, McNemar |

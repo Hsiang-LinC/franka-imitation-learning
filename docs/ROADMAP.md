@@ -35,7 +35,8 @@ Optional: M1 Gymnasium #3–4, M2 FK/IK #5–7. Stretch after the portfolio: LIB
 Rough schedule: steps 2–5 about one week; 6–8 about two; 9 about two; 10 two to three;
 11 about one. Re-plan after the step-8 pilot.
 
-6. Container image (D9), built by GitHub Actions; acceptance: Square replay 181/200 inside it.
+6. Container image (D9), built by GitHub Actions; acceptance: Square replay in it statistically consistent with
+   `sim-square` (D9).
 7. Render 84×84 images from Square states (the Hub has no Square image file), convert to
    LeRobotDataset (images, lossless) and push to the Hub (D10). Tests: alignment,
    round-trip and pairing per the protocol. Open: normalization stats per budget from
