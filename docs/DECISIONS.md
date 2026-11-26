@@ -100,8 +100,14 @@ encoders).
 LeRobot needs Python ≥3.12, so it cannot share the 3.11 venvs. One container image
 (LeRobot + robosuite 1.5.1 + MuJoCo 3.2.7 + OSMesa) does conversion, cloud training
 (Docker) and CLAIX evaluation (Apptainer). This deviates from the venv convention because
-the same image must run on both sides. Acceptance: Square ph replay reproduces 181/200
-inside the container (D6). GitHub Actions builds the image once and pushes the same digest
+the same image must run on both sides. LeRobot forces numpy ≥2, so the image cannot match
+`sim-square` exactly (local replay: 182/200 vs 181/200). Acceptance is therefore statistical
+consistency, not identity: on CLAIX, Square ph replay in the container is paired per demo with
+`sim-square`; it passes if the exact McNemar test is not significant (p ≥ 0.05) and the 12 demos
+that fail on every MuJoCo version (D6) also fail in the container. All phase 2–3 methods are
+evaluated in this image, so they stay mutually comparable; BC-RNN keeps `sim-square` and is
+not compared directly with RGB methods (D7). If the check fails, split simulator and policy
+into separate processes instead. GitHub Actions builds the image once and pushes the same digest
 to ghcr.io (CLAIX pulls it) and to Artifact Registry (Vertex documents only that source). The existing venvs stay for robomimic work.
 
 Phase 2 uses each method's recommended hyperparameters. The chunk length is studied in

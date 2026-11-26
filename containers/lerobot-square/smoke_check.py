@@ -2,8 +2,8 @@
 
 Fails loudly if a pinned package is missing or at the wrong version, if the policy classes
 used in phases 2-3 cannot be imported, or if MuJoCo cannot render offscreen with the
-configured backend. It does not replace the Square replay acceptance check (181/200), which
-needs the dataset and runs on CLAIX.
+configured backend. It does not replace the Square replay acceptance check (#28, DECISIONS
+D9), which needs the dataset and runs on CLAIX.
 """
 
 import importlib.metadata as md

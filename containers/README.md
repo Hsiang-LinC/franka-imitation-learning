@@ -51,6 +51,8 @@ apptainer exec --cleanenv --bind "$PWD:/workspace,$HPCWORK/franka-il:/data" \
         --out /data/runs/square_replay_container/replay_check.json
 ```
 
-**Acceptance (#28):** this replay reproduces 181/200, and the failing demos are the same ones as
-in `sim-square` (docs/BASELINE.md). If it does not, the image differs from the validated
-simulator and must not be used for evaluation.
+**Acceptance (#28, DECISIONS D9):** pair this replay per demo with the `sim-square` result
+(181/200, docs/BASELINE.md). It passes if the exact McNemar test is not significant (p ≥ 0.05)
+and the 12 demos that fail on every MuJoCo version also fail here. Exact identity is not
+expected, because LeRobot requires numpy ≥2 (local replay on an Intel Mac gave 182/200). If
+the check fails, the image must not be used for evaluation.
