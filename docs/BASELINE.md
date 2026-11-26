@@ -70,7 +70,7 @@ per-demo outcomes and max state errors identical to the overlay run 5920277. In 
 Trainer venv (`requirements/train.txt`): robomimic editable, installed with `sim.txt` as
 pip constraints; no robosuite/MuJoCo. robomimic imports `six` without declaring it.
 
-`jobs/lift_bc_rnn_cpu.sh` (CPU `devel`, 200 epochs, in-training rollouts off), config =
+`jobs/bc_rnn_cpu.sh lift 200 20` (then `lift_bc_rnn_cpu.sh`; CPU `devel`, 200 epochs, in-training rollouts off), config =
 `configs/lift/bc_rnn_low_dim.json` + overrides recorded in the job script:
 
 | Job | Cores | Elapsed | Train epoch (median) | Valid epoch | MaxRSS |
@@ -99,7 +99,7 @@ identical. Paired checkpoint evaluation therefore needs the env seed set (0.4).
 
 ### Closed-loop checkpoint evaluation (0.4, state-based)
 
-`jobs/lift_eval_cpu.sh` → `jobs/eval_checkpoints.py` (upstream `rollout()`, env seed set),
+`jobs/eval_cpu.sh lift` (then `lift_eval_cpu.sh`) → `jobs/eval_checkpoints.py` (upstream `rollout()`, env seed set),
 checkpoints of training job 5824723, 50 rollouts, horizon 400, CPU. Each checkpoint takes
 1.5–5 min. Low-dim observations include the privileged cube state.
 
@@ -141,6 +141,47 @@ Failure modes (agentview only, so height is ambiguous; 2 late failures, so no ca
 - Cube yaw (90°-symmetric, effective 0–45°) is a candidate factor, not a sufficient one:
   failed episodes have 41.3° (seed 0 ep 5, rank 7 of 50) and 33.5° (seed 1 ep 35, rank 15);
   the most-rotated seed 1 episode (44.5°) succeeds.
+
+### Can BC-RNN baseline (phase 1, state-based)
+
+Training job 5929929: `jobs/bc_rnn_cpu.sh can` on c23ms (4 CPUs), paper config
+`configs/can/bc_rnn_low_dim.json`, 2000 epochs, 3 h 35 min (≈6.4 s/epoch), checkpoint every
+100 epochs (SHA256 in the job log). Train NLL 2.7 → −24.8, still falling; logged validation
+NLL ≈ 6×10⁶ (eval-mode GMM std clamp, as on Lift), lowest near epoch 300.
+Evaluation: `jobs/eval_cpu.sh can 5929929` on `sim` (robosuite 1.5.2, MuJoCo 3.9.0),
+50 rollouts, horizon 400; seed 0 = selection (job 5949705, paired across all 20 checkpoints,
+c23ms), seed 1 = report (job 5950799).
+
+| Epoch | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Successes / 50 | 0 | 9 | 41 | 41 | 47 | 45 | 44 | 42 | 48 | 49 |
+
+| Epoch | 1100 | 1200 | 1300 | 1400 | 1500 | 1600 | 1700 | 1800 | 1900 | 2000 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Successes / 50 | 48 | 48 | 46 | 47 | 48 | 48 | 48 | 49 | 46 | 50 |
+
+- Plateau from epoch 900 (46–50/50): no checkpoint from 900 on differs from epoch 2000
+  (exact McNemar, smallest p = 0.125); 700 and 800 are worse (p = 0.031, 0.008).
+- Selected: epoch 2000 (most successes on seed 0, ties to later).
+- **Report, fresh seed 1**: epoch 2000 **47/50 (94%, 95% Wilson 84–98%)**; the 50/50 on
+  seed 0 was inflated by selecting the maximum of 20. The robomimic paper reports 100% for
+  BC-RNN low-dim Can ph (best of 2000 epochs, mean of 3 training seeds); our interval is
+  consistent with near-100% but 50 episodes cannot separate 94% from 98%.
+- Failure mode (clips of epoch 1300, episodes 4 and 36, re-run job 5950806 reproduced all
+  50 episode records of 5949705): the can slips or is released short of the target
+  compartment during transport and is never re-grasped; the arm hovers over the target
+  until the horizon. Episodes 4, 13 and 36 account for 12 of 25 plateau failures.
+- Cross-checks (notebook 02, section 4b): all 200 recorded demos succeed and none contains a
+  drop or re-grasp, so the data has no failure and no recovery example. The 6 demos failing
+  action replay on 3.9.0 (job 5952983, filmed recorded vs replayed) diverge only at the
+  release above the bin (landing physics), not in transport, and none of them is among the
+  5 nearest demos of episodes 4, 13 or 36. Hard starts have demos as close
+  as easy ones (`results/can_eval_init_states.csv`, rebuilt by `jobs/eval_init_states.py`);
+  7 of 9 lie near the y limits of the start region (exploratory, threshold chosen post hoc).
+- Analysis: `notebooks/02_bc_rnn_baseline.ipynb` from `results/can_eval_episodes.csv`
+  (`jobs/collect_eval.py`); clips in `docs/media/can_*.gif` (`jobs/make_clips.py`) →
+  ![success vs epoch](figures/can_eval_success.png)
+  ![paired outcomes](figures/can_eval_paired.png)
 
 ### Known install issue: egl_probe (robomimic dependency)
 

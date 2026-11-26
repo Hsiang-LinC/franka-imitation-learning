@@ -20,9 +20,11 @@ Optional: M1 Gymnasium #3–4, M2 FK/IK #5–7. Stretch after the portfolio: LIB
    rollout with video.
 1. Can and Square (ph) datasets downloaded with source and checksum; per-dataset
    simulator pins chosen by replay (D6), done.
-2. Square: inspect observations/actions; freeze episode splits. (Can training skipped.)
-   Steps 2–5 were run on CLAIX (2000-epoch training; failure analysis in progress);
-   evidence is not yet pushed, so they stay open here.
+2. Can and Square: inspect observations/actions; freeze episode splits
+   (`notebooks/01_can_square_data.ipynb`, `results/data_manifest.json`).
+   Can BC-RNN (2000 epochs, job 5929929) and its failure analysis are in PR #26.
+   Square BC-RNN follows the same jobs; its evidence is not yet pushed, so steps 3–5
+   stay open here.
    Optional check: do policy failures cluster where replay fails (peg jam)? If so, train
    on the 181 replay-consistent demos vs all 200 and compare on the same reset seeds.
 3. Build the BC-RNN low-dim config from robomimic's templates; smoke run; reload check.
